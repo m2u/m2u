@@ -26,7 +26,6 @@ def initProgram(programName):
     else:
         print("undefined program")
     
-
 def initEditor(editorName):
     global editor
     from m2u import udk
