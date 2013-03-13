@@ -23,6 +23,7 @@ SendMessage = ctypes.windll.user32.SendMessageA
 WM_SETTEXT = 0x000C
 WM_KEYDOWN = 0x0100
 VK_RETURN  = 0x0D
+WM_CHAR = 0x0102
 
 
 def getWindows(hwnd, lParam):
@@ -49,8 +50,22 @@ def getWindows(hwnd, lParam):
 def connectToUEd():
     EnumWindows(EnumWindowsProc(getWindows), 0)
 
+#import os
+#from m2u.core import hub
 def fireCommand(command):
     global gCommandField
     SendMessage(gCommandField, WM_SETTEXT, 0, str(command) )
-    PostMessage(gCommandField, WM_KEYDOWN, VK_RETURN, 0)   
+    #if hub.program.getProgName() == "maya":
+    #    print("program is maya")
+    #    # a little hack required for maya
+    #    folder = os.path.dirname(os.path.realpath(__file__))
+    #    fcmd = (r"python "+folder+r"\udkMayaSendEnter.py " + str(gCommandField))
+    #    print(fcmd)
+    #    os.system(fcmd)
+    #else:
+    #    PostMessage(gCommandField, WM_KEYDOWN, VK_RETURN, 0)   
+    PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)   
+    # so... VK_RETURN with WM_KEYDOWN didn't work from within maya...
+    # but WM_CHAR works, simply with the VK_RETURN value
+    # strange stuff
     
