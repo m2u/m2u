@@ -1,2 +1,4 @@
 #ignore compiled python files
 *.pyc
+#ignore files that start with a dot
+.*

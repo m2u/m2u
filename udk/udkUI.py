@@ -85,33 +85,51 @@ class GUITHREADINFO(ctypes.Structure):
 class ThreadWinLParm(ctypes.Structure):
     """
     a lParam object to get a name to and an object back
-    from the windows list Thread Windows function
+    from the a windows enumerator Proc function
     """
     _fields_=[
         ("name", ctypes.c_wchar_p),
         ("hwnd", ctypes.POINTER(ctypes.c_long))
     ]
 
-#TODO: get that lparam casting stuff working
+
 def _getThreadWndByTitle(hwnd, lParam):
-    """ this is a callback function """
+    """
+    this is a callback function called by EnumThreadWindows
+    lParam has to be a ctypes byref instance of ThreadWinLParam
+    """
     length = GetWindowTextLength(hwnd)
     buff = ctypes.create_unicode_buffer(length + 1)
     GetWindowText(hwnd, buff, length + 1)
-    param = ctypes.cast(lParam, ctypes.POINTER(ThreadWinLParm)).contents# ctypes.cast(lParam, ThreadWinLParm)
+    param = ctypes.cast(lParam, ctypes.POINTER(ThreadWinLParm)).contents
     if buff.value == param.name:
-        print "found Export win"
         param.hwnd = hwnd
-        return False
+        return False #stop iteration
     return True
 
-def _getExportDlgElements(hwnd, lParam):
+def _getChildWindowByName(hwnd, lParam):
+    """
+    performs a recursive hierarchical search (not like FindWindowEx)
+    TODO aarg, childWindow geht nicht wirklich durch alle fenster durch,
+    oder der windowText ist nichts was zum identifizieren taugt...
+    findWindowEx muss ja leider der string fuer bekannt sein
+    """
     length = GetWindowTextLength(hwnd)
     buff = ctypes.create_unicode_buffer(length + 1)
     GetWindowText(hwnd, buff, length + 1)
-    if buff.value == "Export":        
+    param = ctypes.cast(lParam, ctypes.POINTER(ThreadWinLParm)).contents
+
+    length = 255
+    cbuff = ctypes.create_unicode_buffer(length + 1)
+    GetClassName(hwnd, cbuff, length+1)
+    print "wnd "+cbuff.value+" "+buff.value
+    if buff.value == param.name:
+        param.hwnd = hwnd
         return False
+    #else:
+    #    EnumWindows(hwnd, EnumWindowsProc(_getChildWindowByName),lParam)
     return True
+
     
 def _getWindows(hwnd, lParam):
     """
@@ -128,10 +146,10 @@ def _getWindows(hwnd, lParam):
             gMainWindow = hwnd
             
             # get the command line field
+            global gCommandField
             child = 0
             child = FindWindowEx(hwnd, child, u"msctls_statusbar32", 0)
             child = FindWindowEx(child, 0, u"ComboBox", 0)
-            global gCommandField
             gCommandField = FindWindowEx(child, 0, u"Edit", 0)
             
             #get menus
@@ -147,8 +165,7 @@ def _getWindows(hwnd, lParam):
 def connectToUEd():
     EnumWindows(EnumWindowsProc(_getWindows), 0)
 
-#import os
-#from m2u.core import hub
+
 def fireCommand(command):
     """
     executes the command string in UdK (uses the command field)
@@ -159,7 +176,6 @@ def fireCommand(command):
     PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)   
     # so... VK_RETURN with WM_KEYDOWN didn't work from within maya...
     # but WM_CHAR works, simply with the VK_RETURN value
-    # strange stuff
     
 def callExportSelected(filePath, withTextures):
     """
@@ -169,17 +185,14 @@ def callExportSelected(filePath, withTextures):
     global gMainWindow
     global gMenuExport
     thread = GetWindowThreadProcessId(gMainWindow, 0)
-    print "thread "+ str(thread)
-    #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExport,0), 0) # call menu
-    #hDlg = GetWindow(gMainWindow, 0) # save popup dialog handle
-    #hDlg = getModalDialog(thread)
-    #print "hDlg= " + str(hDlg)
+    
     param = ThreadWinLParm(name="Export")
     lParam = ctypes.byref(param) #ctypes.cast(param,ctypes.pointer)
     EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), lParam)
     hDlg = param.hwnd
-    print "hDlg " +str(hDlg)
+    
     SendMessage(hDlg, WM_SETTEXT, 0, str(filePath))
+    listAllChildren(hDlg)
     #length = GetWindowTextLength(hDlg)
     #buff = ctypes.create_unicode_buffer(length + 1)
     #GetWindowText(hDlg, buff, length + 1)
@@ -188,6 +201,14 @@ def callExportSelected(filePath, withTextures):
     #PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(IDC_OK,BN_CLICKED),
     #GetDlgItem(IDC_OK)) #maybe alternative to sending VK_RETURN
 
+def listAllChildren(hwnd):
+    """
+    """
+    param = ThreadWinLParm(name="Export")
+    lParam = ctypes.byref(param)
+    EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByName),lParam)
+    
 
 connectToUEd()
-callExportSelected(1,1)
+#callExportSelected(1,1)
+listAllChildren(gMainWindow)
