@@ -5,7 +5,7 @@ import ctypes #required for windows ui stuff
 # UI element window handles
 gCommandField = None # the udk command line text field
 gMainWindow = None # the udk window
-gMenuExport = None # export selected menu entry
+gMenuExportID = None # export selected menu entry
 
 # windows functions and constants
 EnumWindows = ctypes.windll.user32.EnumWindows
@@ -47,6 +47,7 @@ MAKEWPARAM = MAKELONG
 GetGUIThreadInfo = ctypes.windll.user32.GetGUIThreadInfo
 GetWindowThreadProcessId = ctypes.windll.user32.GetWindowThreadProcessId
 EnumThreadWindows = ctypes.windll.user32.EnumThreadWindows
+GetDlgItemText = ctypes.windll.user32.GetDlgItemTextW
 
 class RECT(ctypes.Structure):
  _fields_ = [
@@ -89,6 +90,7 @@ class ThreadWinLParm(ctypes.Structure):
     """
     _fields_=[
         ("name", ctypes.c_wchar_p),
+        ("cls", ctypes.c_wchar_p),
         ("hwnd", ctypes.POINTER(ctypes.c_long))
     ]
 
@@ -103,16 +105,19 @@ def _getThreadWndByTitle(hwnd, lParam):
     GetWindowText(hwnd, buff, length + 1)
     param = ctypes.cast(lParam, ctypes.POINTER(ThreadWinLParm)).contents
     if buff.value == param.name:
+        print "Found Wanted Thread Window"
         param.hwnd = hwnd
         return False #stop iteration
     return True
 
 def _getChildWindowByName(hwnd, lParam):
     """
-    performs a recursive hierarchical search (not like FindWindowEx)
-    TODO aarg, childWindow geht nicht wirklich durch alle fenster durch,
-    oder der windowText ist nichts was zum identifizieren taugt...
-    findWindowEx muss ja leider der string fuer bekannt sein
+    callback function to be called by EnumChildWindows
+
+    if name is None, the cls name is taken,
+    if cls is None, the name is taken,
+    if both are None, all elements are printed
+    if both have values, only the element matching both will fit
     """
     length = GetWindowTextLength(hwnd)
     buff = ctypes.create_unicode_buffer(length + 1)
@@ -122,13 +127,33 @@ def _getChildWindowByName(hwnd, lParam):
     length = 255
     cbuff = ctypes.create_unicode_buffer(length + 1)
     GetClassName(hwnd, cbuff, length+1)
-    print "wnd "+cbuff.value+" "+buff.value
-    if buff.value == param.name:
-        param.hwnd = hwnd
-        return False
-    #else:
-    #    EnumWindows(hwnd, EnumWindowsProc(_getChildWindowByName),lParam)
+    if param.name == None and param.cls != None:
+        #print "no name, but cls"
+        if param.cls in cbuff.value:# == param.cls:
+            param.hwnd = hwnd
+            return False
+    elif param.cls == None and param.name != None:
+        #print "no cls, but name"
+        if buff.value == param.name:
+            param.hwnd = hwnd
+            return False
+    elif param.cls != None and param.name != None:
+        #print "cls and name"
+        if buff.value == param.name and param.cls in cbuff.value:# == param.cls:
+            param.hwnd = hwnd
+            return False
+    else: #bot values are None, print the current element
+        print "wnd cls: "+cbuff.value+" name: "+buff.value
     return True
+
+def getChildWindowByName(hwnd, name = '', cls = ''):
+    """
+    convenience function, see _getChildWindowByName
+    """
+    param = ThreadWinLParm(name=name,cls=cls)
+    lParam = ctypes.byref(param)
+    EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByName),lParam)
+    return param.hwnd
 
     
 def _getWindows(hwnd, lParam):
@@ -153,11 +178,11 @@ def _getWindows(hwnd, lParam):
             gCommandField = FindWindowEx(child, 0, u"Edit", 0)
             
             #get menus
-            global gMenuExport
+            global gMenuExportID
             hMenu = GetMenu(gMainWindow)
             hFileMenu = GetSubMenu(hMenu,0)
             hExportMenu = GetSubMenu(hFileMenu, 13)
-            gMenuExport = GetMenuItemID(hExportMenu, 1)
+            gMenuExportID = GetMenuItemID(hExportMenu, 1)
 
             return False # we foun udk, no further iteration required
     return True
@@ -172,43 +197,57 @@ def fireCommand(command):
     """
     global gCommandField
     SendMessage(gCommandField, WM_SETTEXT, 0, str(command) )
-    #PostMessage(gCommandField, WM_KEYDOWN, VK_RETURN, 0)   
     PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)   
-    # so... VK_RETURN with WM_KEYDOWN didn't work from within maya...
-    # but WM_CHAR works, simply with the VK_RETURN value
-    
+    # VK_RETURN with WM_KEYDOWN didn't work from within maya, use WM_CHAR instead...
+
+import time
 def callExportSelected(filePath, withTextures):
     """
     calls the menu entry for export selected
     enters the file path and answers the popup dialogs
     """
     global gMainWindow
-    global gMenuExport
+    global gMenuExportID
+
+    PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
+    # SendMessage blocks execution, because it only returns when the modal gets closed
+    # PostMessage returns before the modal is opened
+    # so we will Post, and ask the thread so long for the export window, until it is there. that might not be the best way, but i really have no other idea anymore, on how to get to the modal dialog 
     thread = GetWindowThreadProcessId(gMainWindow, 0)
-    
-    param = ThreadWinLParm(name="Export")
-    lParam = ctypes.byref(param) #ctypes.cast(param,ctypes.pointer)
-    EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), lParam)
+    print thread
+    null_ptr = ctypes.POINTER(ctypes.c_int)()
+    param = ThreadWinLParm(hwnd = null_ptr, name="Export",cls=None)
+    lParam = ctypes.byref(param)
+    #EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), lParam)
+    while not bool(param.hwnd): # while NULL
+        #print "hwnd = "+ str(param.hwnd)
+        EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), lParam)
     hDlg = param.hwnd
     
-    SendMessage(hDlg, WM_SETTEXT, 0, str(filePath))
-    listAllChildren(hDlg)
-    #length = GetWindowTextLength(hDlg)
-    #buff = ctypes.create_unicode_buffer(length + 1)
-    #GetWindowText(hDlg, buff, length + 1)
-    #print buff.value
-    #PostMessage(hDlg, WM_CHAR, VK_RETURN, 0)
+    #listAllChildren(hDlg) 
+    #pass
+    
+    #b = ctypes.windll.user32.RedrawWindow(hDlg,0,0,0)
+    #b = ctypes.windll.user32.UpdateWindow(hDlg)
+    #time.sleep(0.01)
+    #and again, since i found no other way to somehow wait till all child elements of the dialog are created, we have to ask so long, until we finally find the element we want
+    null_ptr = ctypes.POINTER(ctypes.c_int)()
+    param = ThreadWinLParm(hwnd = null_ptr, name=None, cls="Edit")
+    while not bool(param.hwnd): # while NULL
+        print "child = "+ str(param.hwnd)
+        EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByName), ctypes.byref(param))
+    print "found edit field"
+#    filenameField = getChildWindowByName(hDlg,name=None,cls='Edit')
+#    SendMessage(filenameField, WM_SETTEXT, 0, str(filePath))
+#    PostMessage(filenameField, WM_CHAR, VK_RETURN, 0)
     #PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(IDC_OK,BN_CLICKED),
     #GetDlgItem(IDC_OK)) #maybe alternative to sending VK_RETURN
 
 def listAllChildren(hwnd):
-    """
-    """
-    param = ThreadWinLParm(name="Export")
-    lParam = ctypes.byref(param)
-    EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByName),lParam)
-    
+    """convenience function, print all children of a hwnd"""
+    getChildWindowByName(hwnd,name=None,cls=None)
+
 
 connectToUEd()
-#callExportSelected(1,1)
-listAllChildren(gMainWindow)
+callExportSelected("C:/autoexport.obj",1)
+#listAllChildren(gMainWindow)
