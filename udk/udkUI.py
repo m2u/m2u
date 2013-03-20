@@ -2,6 +2,30 @@
 
 import ctypes #required for windows ui stuff
 
+import os
+import glob 
+import comtypes.client
+
+#Generates wrapper for a given library 
+def wrap(com_lib): 
+    try: 
+         comtypes.client.GetModule(com_lib) 
+    except: 
+         print "Failed to wrap {0}".format(com_lib) 
+
+sys32dir = os.path.join(os.environ["SystemRoot"], "system32") 
+
+#Generate wrappers for all ocx's in system32 
+for lib in glob.glob(os.path.join(sys32dir, "*.ocx")): 
+    wrap(lib) 
+
+#Generate for all dll's in system32 
+for lib in glob.glob(os.path.join(sys32dir, "*.tlb")): 
+    wrap(lib)
+    
+from comtypes import client
+from comtypes.gen.Accessibility import I
+
 # UI element window handles
 gCommandField = None # the udk command line text field
 gMainWindow = None # the udk window
@@ -91,7 +115,9 @@ class ThreadWinLParm(ctypes.Structure):
     _fields_=[
         ("name", ctypes.c_wchar_p),
         ("cls", ctypes.c_wchar_p),
-        ("hwnd", ctypes.POINTER(ctypes.c_long))
+        ("hwnd", ctypes.POINTER(ctypes.c_long)),
+        ("enumPos", ctypes.c_int),
+        ("_enum", ctypes.c_int) # keep track of current enum step
     ]
 
 
@@ -123,6 +149,7 @@ def _getChildWindowByName(hwnd, lParam):
     buff = ctypes.create_unicode_buffer(length + 1)
     GetWindowText(hwnd, buff, length + 1)
     param = ctypes.cast(lParam, ctypes.POINTER(ThreadWinLParm)).contents
+    param._enum += 1
 
     length = 255
     cbuff = ctypes.create_unicode_buffer(length + 1)
@@ -143,18 +170,36 @@ def _getChildWindowByName(hwnd, lParam):
             param.hwnd = hwnd
             return False
     else: #bot values are None, print the current element
-        print "wnd cls: "+cbuff.value+" name: "+buff.value
+        print "wnd cls: "+cbuff.value+" name: "+buff.value+" enum: "+str(param._enum)
     return True
 
 def getChildWindowByName(hwnd, name = '', cls = ''):
     """
     convenience function, see _getChildWindowByName
     """
-    param = ThreadWinLParm(name=name,cls=cls)
+    param = ThreadWinLParm(name=name,cls=cls,_enum=-1)
     lParam = ctypes.byref(param)
     EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByName),lParam)
     return param.hwnd
 
+def _getChildWindowByEnumPos(hwnd, lParam):
+    """ callback function """
+    param = ctypes.cast(lParam, ctypes.POINTER(ThreadWinLParm)).contents
+    param._enum += 1
+    if param._enum == param.enumPos:
+        param.hwnd = hwnd
+        return False
+    return True
+
+def getChildWindowByEnumPos(hwnd, pos):
+    """
+    uses the creation order which is reflected in Enumerate functions to get the handle to a certain window. this is useful when the name or cls is not unique
+    you can count the enum pos by printing all child windows of a window
+    """
+    param = ThreadWinLParm(name = None, cls = None, enumPos = pos, _enum = -1)
+    EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByEnumPos), ctypes.byref(param))
+    return param.hwnd
+    
     
 def _getWindows(hwnd, lParam):
     """
@@ -209,7 +254,7 @@ def callExportSelected(filePath, withTextures):
     global gMainWindow
     global gMenuExportID
 
-    PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
+    #PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
     # SendMessage blocks execution, because it only returns when the modal gets closed
     # PostMessage returns before the modal is opened
     # so we will Post, and ask the thread so long for the export window, until it is there. that might not be the best way, but i really have no other idea anymore, on how to get to the modal dialog 
@@ -217,15 +262,13 @@ def callExportSelected(filePath, withTextures):
     print thread
     null_ptr = ctypes.POINTER(ctypes.c_int)()
     param = ThreadWinLParm(hwnd = null_ptr, name="Export",cls=None)
-    lParam = ctypes.byref(param)
-    #EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), lParam)
+    #time.sleep(0.02) #give it some time to process, before bombing it with requests
     while not bool(param.hwnd): # while NULL
         #print "hwnd = "+ str(param.hwnd)
-        EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), lParam)
+        EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), ctypes.byref(param))
     hDlg = param.hwnd
     
-    #listAllChildren(hDlg) 
-    #pass
+    listAllChildren(hDlg) 
     
     #b = ctypes.windll.user32.RedrawWindow(hDlg,0,0,0)
     #b = ctypes.windll.user32.UpdateWindow(hDlg)
@@ -237,6 +280,23 @@ def callExportSelected(filePath, withTextures):
         print "child = "+ str(param.hwnd)
         EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByName), ctypes.byref(param))
     print "found edit field"
+
+    null_ptr = ctypes.POINTER(ctypes.c_int)()
+    param = ThreadWinLParm(hwnd = null_ptr, name=None, cls=None, enumPos=35, _enum=-1)
+    while not bool(param.hwnd): # while NULL
+        print "child = "+ str(param.hwnd)
+        EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByEnumPos), ctypes.byref(param))
+    print "found thingy field"
+    
+    """
+    null_ptr = ctypes.POINTER(ctypes.c_int)()
+    param = ThreadWinLParm(hwnd = null_ptr, name=None, cls="ToolbarWindow32")
+    while not bool(param.hwnd): # while NULL
+        print "child = "+ str(param.hwnd)
+        EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByName), ctypes.byref(param))
+    print "found thingy field"
+    """
+    SendMessage(param.hwnd, WM_SETTEXT, 0, str("Adresse: Z:\\Documents"))
 #    filenameField = getChildWindowByName(hDlg,name=None,cls='Edit')
 #    SendMessage(filenameField, WM_SETTEXT, 0, str(filePath))
 #    PostMessage(filenameField, WM_CHAR, VK_RETURN, 0)
@@ -247,7 +307,14 @@ def listAllChildren(hwnd):
     """convenience function, print all children of a hwnd"""
     getChildWindowByName(hwnd,name=None,cls=None)
 
+def accessibleObjectFromWindow(hwnd):
+  ptr = ctypes.POINTER(IAccessible)()
+  res = oledll.oleacc.AccessibleObjectFromWindow(
+    hwnd,0,
+    byref(IAccessible._iid_),byref(ptr))
+  return ptr
 
+    
 connectToUEd()
 callExportSelected("C:/autoexport.obj",1)
 #listAllChildren(gMainWindow)
