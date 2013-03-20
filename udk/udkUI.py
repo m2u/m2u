@@ -211,4 +211,4 @@ def listAllChildren(hwnd):
 
 connectToUEd()
 #callExportSelected(1,1)
-listAllChildren(gMainWindow)
+#listAllChildren(gMainWindow)
