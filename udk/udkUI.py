@@ -6,6 +6,7 @@ import os
 import glob 
 import comtypes.client
 
+# thanks to http://stackoverflow.com/questions/3898670/cant-import-comtypes-gen
 #Generates wrapper for a given library 
 def wrap(com_lib): 
     try: 
@@ -24,7 +25,7 @@ for lib in glob.glob(os.path.join(sys32dir, "*.tlb")):
     wrap(lib)
     
 from comtypes import client
-from comtypes.gen.Accessibility import I
+
 
 # UI element window handles
 gCommandField = None # the udk command line text field
@@ -307,12 +308,12 @@ def listAllChildren(hwnd):
     """convenience function, print all children of a hwnd"""
     getChildWindowByName(hwnd,name=None,cls=None)
 
-def accessibleObjectFromWindow(hwnd):
-  ptr = ctypes.POINTER(IAccessible)()
-  res = oledll.oleacc.AccessibleObjectFromWindow(
-    hwnd,0,
-    byref(IAccessible._iid_),byref(ptr))
-  return ptr
+#def accessibleObjectFromWindow(hwnd):
+# ptr = ctypes.POINTER(IAccessible)()
+# res = oledll.oleacc.AccessibleObjectFromWindow(
+#   hwnd,0,
+#   byref(IAccessible._iid_),byref(ptr))
+# return ptr
 
     
 connectToUEd()
