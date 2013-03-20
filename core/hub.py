@@ -1,6 +1,6 @@
 import sys
 program = None
-editor= None
+editor = None
 
 def initialize(programName,editorName="udk"):
     """
@@ -14,21 +14,27 @@ def initialize(programName,editorName="udk"):
 
 def initProgram(programName):
     """
-    load the correct module for the program
+    Load the correct module for the program
     """
     global program
+    
     if programName == "maya":
         from m2u import maya
         program = maya
+
     elif programName == "max":
-        from m2u import max
+        import max
         program = max
     else:
         print("undefined program")
+
+    # create the GUI by loading the .ui file and connecting it to functionality
+    from max import maxGUI
+    maxGUI.launchGUI()
     
 def initEditor(editorName):
     global editor
-    from m2u import udk
+    import udk
     editor = udk
 
 def alive():
