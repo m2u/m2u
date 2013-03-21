@@ -18,5 +18,3 @@ def setCamera(x,y,z,rx,ry,rz):
     set the viewport camera
     """
     udkCommand.setCamera(x,y,z,rx,ry,rz)
-
-
