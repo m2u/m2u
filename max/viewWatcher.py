@@ -4,19 +4,45 @@
 
 from Py3dsMax import mxs
 
+syncTimer = None # to stop and delete our timer later
+
 def addCallback():
 	"""
-	Install viewportChange callback from the current 3ds Max session
+	Installs viewportChange callback from the current 3ds Max session
 	"""
-	mxs.callbacks.addScript(mxs.pyhelper.namify("viewportChange"), "python.exec(\"viewWatcher.syncViewNonstop()\")", id = mxs.pyhelper.namify("viewWatcher"))
+	mxs.callbacks.addScript(mxs.pyhelper.namify("viewportChange"), "python.exec(\"viewWatcher.syncView()\")", id = mxs.pyhelper.namify("viewWatcher"))
 	print "VW: Viewport change callback added"
-	
+
 def removeCallback():
 	"""
 	Remove viewportChange callback from the current 3ds Max session
 	"""
 	mxs.callbacks.removeScripts( id = mxs.pyhelper.namify("viewWatcher") )
 	print "VW: Viewport change callback removed"
+
+def addTimer(interval):
+	"""
+	Instead of syncing on view change (using a callback),
+	installs a timer that syncs view every given interval
+	"""
+	from core.repeatTimer import RepeatTimer
+	from max import viewWatcher
+	global syncTimer
+	syncTimer = RepeatTimer( viewWatcher.syncView, interval )
+	syncTimer.start()
+
+	print "VW: Timer added"
+
+def removeTimer():
+	"""
+	Stop and remove the timer to stop sync
+	"""
+	global syncTimer
+	if syncTimer != None:
+		syncTimer.stop()
+		syncTimer = None
+
+	print "VW: Timer removed"
 
 def getViewData():
 	""""
@@ -64,11 +90,19 @@ def getViewData():
 	# print data
 	return data
 
-def syncViewNonstop():
+def syncView():
 	"""
 	Constantly synchronizes the UDK viewport to the 3ds Max viewport when the view changes
 	"""
+	# reset FOV if it is wrong in persp mode (may have been changed by orthographic view)
+	import max
+	if str(mxs.viewport.getType()) == "view_persp_user" and mxs.viewport.GetFOV() != max.udk_fov:
+		max.setViewFOV("udk")
+
+	# collect view data and send to hub
 	from max import viewWatcher
 	d = viewWatcher.getViewData()
 	from core import hub
 	hub.editor.setCamera(d[0], d[1], d[2], d[3], d[4], d[5])
+
+	# print "VW: Synching..."

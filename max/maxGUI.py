@@ -7,7 +7,6 @@ from blurdev.gui import Dialog
 # this can be changed from outside maybe prior to launch?
 uiFilepath = r"C:\Users\Christoph\Desktop\Unreal Level Builder\m2u\core\gui.ui"
 
-# NEED TO RESET VIEW FOV TO 90 EVERYTIME WE USED AN ORTHOGRAPHIC VIEW CAUSE THAT RESETS IT TO 45
 
 class M2UGUI(Dialog):
     
@@ -17,7 +16,7 @@ class M2UGUI(Dialog):
         self.initUIFromFile( uiFilepath )
         # set viewport fov to match the UDK (90 degrees)
         import max
-        max.setViewFOV(90)
+        max.setViewFOV("udk")
         
     def initUIFromFile(self, path):  
         """ Builds GUI using an external .ui file """    
@@ -28,15 +27,17 @@ class M2UGUI(Dialog):
     def _connect(self): # use "_" to not let this function call itself
         """ Connects UI elements to functions """
         from core import hub
-        self.connect( self.btnViewFOVDefault, SIGNAL( 'clicked()' ), lambda arg = "default" : hub.program.setViewFOV(arg) )
-        self.connect( self.btnViewFOV90, SIGNAL( 'clicked()' ), lambda arg = 90 : hub.program.setViewFOV(arg) ) 
-        self.connect( self.ckbToggleSync, SIGNAL( 'clicked()' ), lambda arg = self.ckbToggleSync : hub.program.toggleSync(arg) ) 
+        # self.connect( self.btnViewFOVDefault, SIGNAL( 'clicked()' ), lambda arg = "default" : hub.program.setViewFOV(arg) )
+        # self.connect( self.btnViewFOV90, SIGNAL( 'clicked()' ), lambda arg = "udk" : hub.program.setViewFOV(arg) ) 
+        self.connect( self.ckbToggleSyncInteractive, SIGNAL( 'clicked()' ), lambda arg = self.ckbToggleSyncInteractive : hub.program.toggleSync(arg) ) 
+        self.connect( self.ckbToggleSyncTimebased, SIGNAL( 'clicked()' ), lambda arg = self.ckbToggleSyncTimebased : hub.program.toggleSync(arg) ) 
 
     def closeEvent(self, evnt):
-        """ Makes sure callbacks are removed when GUI is closed """
+        """ Makes sure callback/timer is removed when GUI is closed """
         print "m2u: Closing dialog"
         from max import viewWatcher
         viewWatcher.removeCallback()
+        viewWatcher.removeTimer()
         super(M2UGUI, self).closeEvent(evnt)
 
 def launchGUI():
