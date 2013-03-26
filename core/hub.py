@@ -24,18 +24,21 @@ def initProgram(programName):
 
     elif programName == "max":
         import max
+        reload(max) # for testing
         program = max
     else:
         print("undefined program")
 
     # create the GUI by loading the .ui file and connecting it to functionality
     from max import maxGUI
+    reload(maxGUI)
     maxGUI.launchGUI()
     
 def initEditor(editorName):
     global editor
     import udk
     editor = udk
+    print "EDI:", editor
 
 def alive():
     print("hub hier")
