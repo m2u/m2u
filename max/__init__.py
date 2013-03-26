@@ -26,22 +26,35 @@ def toggleSync( checkbutton ):
 	Toggles synchronization with UDK on/ff depending on button state.
 	"""
 	from core import hub
+	from max import maxGUI
 	from max import viewWatcher
+	from max import objectWatcher
 
 	if checkbutton.isChecked(): # sync
 		hub.editor.connectToInstance() # editor might change, so keep it general
 
 		if checkbutton.text() == "Sync Interactive":
 			viewWatcher.addCallback() # interactive sync
+			
+			objectWatcher.addCallback()
+
+			viewWatcher.removeTimer()  
+			maxGUI.gui_instance.ckbToggleSyncTimebased.setChecked(False) # uncheck other btn
 
 		# HOW TO TIME SYNC ONLY WHEN VIEW HAS CHANGED?
 		elif checkbutton.text() == "Sync Timebased":
-			viewWatcher.addTimer( 0.000001 ) # timed sync
+			viewWatcher.addTimer( 0.01 ) # timed sync
+
+			viewWatcher.removeCallback() 
+			maxGUI.gui_instance.ckbToggleSyncInteractive.setChecked(False) # uncheck other btn
 
 	else: # do not sync
 		# make sure stuff is removed
-		viewWatcher.removeCallback() # interactive sync
-		viewWatcher.removeTimer() # timed sync
+		viewWatcher.removeCallback() 
+		viewWatcher.removeTimer() 
+
+		objectWatcher.removeCallback()
+		objectWatcher.removeChangeHandler()
 
 
 		

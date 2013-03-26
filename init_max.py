@@ -15,9 +15,11 @@ sys.path.append( m2uDir )
 
 # sys.path.append( m2uDir + "\\max" ) 
 
-# for some reason this import is needed here to make it accessible for max's callbacks later
+# THIS ADDS THEM TO THE GLOBAL SCOPE SO IT CAN BE ACCESSED BY MXS CALLBACKS!
 from max import viewWatcher
 reload(viewWatcher) # for testing
+from max import objectWatcher
+reload(objectWatcher) # for testing
 
 from core import hub
 reload(hub) # for testing

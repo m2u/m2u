@@ -6,7 +6,7 @@ from blurdev.gui import Dialog
 
 # this can be changed from outside maybe prior to launch?
 uiFilepath = r"C:\Users\Christoph\Desktop\Unreal Level Builder\m2u\core\gui.ui"
-
+gui_instance = None # holds our GUI instance
 
 class M2UGUI(Dialog):
     
@@ -35,9 +35,18 @@ class M2UGUI(Dialog):
     def closeEvent(self, evnt):
         """ Makes sure callback/timer is removed when GUI is closed """
         print "m2u: Closing dialog"
+
         from max import viewWatcher
         viewWatcher.removeCallback()
         viewWatcher.removeTimer()
+
+        from max import objectWatcher
+        objectWatcher.removeCallback()
+        objectWatcher.removeChangeHandler()
+
+        import max
+        max.setViewFOV("default")
+
         super(M2UGUI, self).closeEvent(evnt)
 
 def launchGUI():
@@ -45,7 +54,8 @@ def launchGUI():
     # app = QtGui.QApplication(sys.argv)
     # dialog = M2UGUI()
     import blurdev
-    blurdev.launch( M2UGUI )
+    global gui_instance
+    gui_instance = blurdev.launch( M2UGUI )
     # sys.exit(app.exec_()) # closes REPL, but default from the zedcode example
     # app.exec_() # does not close the REPL when widget is closed, better for developing
 
