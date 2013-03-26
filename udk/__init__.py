@@ -4,8 +4,9 @@ import udkUI
 import udkTranslator
 import udkCommand
 
-def alive():
-    print("hallo")
+#might simply use from udkCommand import * here but that would make things visible which should not be visible here ;)
+from udkCommand import transformObject
+from udkCommand import setCamera
 
 def connectToInstance():
     """
@@ -13,10 +14,10 @@ def connectToInstance():
     """
     udkUI.connectToUEd()
 
-def setCamera(x,y,z,rx,ry,rz):
-    """
-    set the viewport camera
-    """
-    udkCommand.setCamera(x,y,z,rx,ry,rz)
+#def setCamera(x,y,z,rx,ry,rz):
+#    """
+#    set the viewport camera
+#    """
+#    udkCommand.setCamera(x,y,z,rx,ry,rz)
 
 
