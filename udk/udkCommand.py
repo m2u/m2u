@@ -1,7 +1,8 @@
 # this file defines functions for actual commands which interact with UDK
 import udkUI
-
-
+#import Tkinter
+import pyperclip
+import re
 """
 DELETE - Deletes the selected actors. # 
 DUPLICATE - Duplicates the selected actors. 
@@ -37,7 +38,7 @@ def selectByName(name):
 #TRANSACTION - Undo and redo commands 
 #    REDO - Performs the last undone operation. 
 #    UNDO - Undoes the last performed operation.
-# not sure if we should use that...
+# !! not sure if we should use that... !!
 def redo():
     command = "TRANSACTON REDO"
     udkUI.fireCommand(command)
@@ -78,10 +79,27 @@ def exportObjToFile(package, objName, objType, filePath):
               (package, objType, filePath, objName)
     udkUI.fireCommand(command)
 
-def exportMeshToFile(meshSig, filePath, withTextures=True):
+def exportMeshToFile(meshSig, folder, fileName, withTextures=True):
     """
     exports a static mesh by placing it in the map and deleting it after export
     it can export the materials textures as bmp
-    filePath must include the filename and extension
+    meshSig is the fully qualified mesh name (package.groups.mesh)
     """
-    udkUI.callExportSelected(filePath, withTextures)
+    udkUI.callExportSelected(folder, withTextures)
+
+def transformObject(objName, trans, rot, scale):
+    """
+    objName is only the instance name
+    trans rot and scale are float tuples
+    """
+    selectByName(objName)
+    keep = pyperclip.getcb() #backup current clipboard
+    cutToClipboard()
+    old = pyperclip.getcb()
+    # [-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)? # float regex
+    locPat = "Location=\(.*?\)\n" # match location line regex
+    locRep = "Location=(X=%f,Y=%f,Y=%f)" % trans
+    new = re.sub(locPat, locRep, old, 1) 
+    pyperclip.setcb(new)
+    pasteFromClipboard()
+    pyperclip.setcb(keep) #restore original clipboard

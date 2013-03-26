@@ -4,28 +4,9 @@ import ctypes #required for windows ui stuff
 
 import os
 import glob 
-import comtypes.client
+import time
 
-# thanks to http://stackoverflow.com/questions/3898670/cant-import-comtypes-gen
-#Generates wrapper for a given library 
-def wrap(com_lib): 
-    try: 
-         comtypes.client.GetModule(com_lib) 
-    except: 
-         print "Failed to wrap {0}".format(com_lib) 
-
-sys32dir = os.path.join(os.environ["SystemRoot"], "system32") 
-
-#Generate wrappers for all ocx's in system32 
-for lib in glob.glob(os.path.join(sys32dir, "*.ocx")): 
-    wrap(lib) 
-
-#Generate for all dll's in system32 
-for lib in glob.glob(os.path.join(sys32dir, "*.tlb")): 
-    wrap(lib)
-    
-from comtypes import client
-
+#from udkUIHelper import getIFileSaveDialogFromHwnd
 
 # UI element window handles
 gCommandField = None # the udk command line text field
@@ -73,6 +54,8 @@ GetGUIThreadInfo = ctypes.windll.user32.GetGUIThreadInfo
 GetWindowThreadProcessId = ctypes.windll.user32.GetWindowThreadProcessId
 EnumThreadWindows = ctypes.windll.user32.EnumThreadWindows
 GetDlgItemText = ctypes.windll.user32.GetDlgItemTextW
+GetDlgItem = ctypes.windll.user32.GetDlgItem
+GetNextDlgTabItem = ctypes.windll.user32.GetNextDlgTabItem
 
 class RECT(ctypes.Structure):
  _fields_ = [
@@ -246,7 +229,6 @@ def fireCommand(command):
     PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)   
     # VK_RETURN with WM_KEYDOWN didn't work from within maya, use WM_CHAR instead...
 
-import time
 def callExportSelected(filePath, withTextures):
     """
     calls the menu entry for export selected
@@ -268,27 +250,49 @@ def callExportSelected(filePath, withTextures):
         #print "hwnd = "+ str(param.hwnd)
         EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), ctypes.byref(param))
     hDlg = param.hwnd
+    print "FUUUUU"
     
-    listAllChildren(hDlg) 
-    
+    """
     #b = ctypes.windll.user32.RedrawWindow(hDlg,0,0,0)
     #b = ctypes.windll.user32.UpdateWindow(hDlg)
     #time.sleep(0.01)
     #and again, since i found no other way to somehow wait till all child elements of the dialog are created, we have to ask so long, until we finally find the element we want
+    """
+    
     null_ptr = ctypes.POINTER(ctypes.c_int)()
     param = ThreadWinLParm(hwnd = null_ptr, name=None, cls="Edit")
     while not bool(param.hwnd): # while NULL
         print "child = "+ str(param.hwnd)
         EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByName), ctypes.byref(param))
     print "found edit field"
+    edit = param.hwnd
+    print "edit: "+ str(ctypes.addressof(edit))
+    #SendMessage(edit, WM_SETTEXT, 0, str(filePath))
+    #dlg = getIFileSaveDialogFromHwnd(hDlg)
 
+    #listAllChildren(hDlg)
+    #time.sleep(0.1)
+    address = GetNextDlgTabItem(hDlg, edit, False) #1
+    address = GetNextDlgTabItem(hDlg, address, False) #2
+    address = GetNextDlgTabItem(hDlg, address, False) #3
+    address = GetNextDlgTabItem(hDlg, address, False) #4
+    address = GetNextDlgTabItem(hDlg, address, False) #5
+    #address = GetNextDlgTabItem(hDlg, address, False) #6
+    print "address: " + str(address)
+    #PostMessage(address, WM_KEYDOWN, VK_RETURN, 0)
+#    listAllChildren(hDlg)
+    #SendMessage(address, WM_SETTEXT, 0, str(filePath))
+    #ctypes.windll.user32.SetFocus(hDlg)
+    #print "sent enter to address"
+    """
     null_ptr = ctypes.POINTER(ctypes.c_int)()
     param = ThreadWinLParm(hwnd = null_ptr, name=None, cls=None, enumPos=35, _enum=-1)
     while not bool(param.hwnd): # while NULL
         print "child = "+ str(param.hwnd)
         EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByEnumPos), ctypes.byref(param))
     print "found thingy field"
-    
+    print ctypes.addressof(param.hwnd)
+    """
     """
     null_ptr = ctypes.POINTER(ctypes.c_int)()
     param = ThreadWinLParm(hwnd = null_ptr, name=None, cls="ToolbarWindow32")
@@ -297,7 +301,7 @@ def callExportSelected(filePath, withTextures):
         EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByName), ctypes.byref(param))
     print "found thingy field"
     """
-    SendMessage(param.hwnd, WM_SETTEXT, 0, str("Adresse: Z:\\Documents"))
+    #SendMessage(param.hwnd, WM_SETTEXT, 0, str("Adresse: Z:\\Documents"))
 #    filenameField = getChildWindowByName(hDlg,name=None,cls='Edit')
 #    SendMessage(filenameField, WM_SETTEXT, 0, str(filePath))
 #    PostMessage(filenameField, WM_CHAR, VK_RETURN, 0)
@@ -308,14 +312,7 @@ def listAllChildren(hwnd):
     """convenience function, print all children of a hwnd"""
     getChildWindowByName(hwnd,name=None,cls=None)
 
-#def accessibleObjectFromWindow(hwnd):
-# ptr = ctypes.POINTER(IAccessible)()
-# res = oledll.oleacc.AccessibleObjectFromWindow(
-#   hwnd,0,
-#   byref(IAccessible._iid_),byref(ptr))
-# return ptr
-
     
-connectToUEd()
-callExportSelected("C:/autoexport.obj",1)
+#connectToUEd()
+#callExportSelected("Z:/Documents",1)
 #listAllChildren(gMainWindow)
