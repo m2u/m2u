@@ -106,11 +106,18 @@ def transformObject(objName, trans, rot, scale):
     # some execution speed when doing this or so?
     old = pyperclip.getcb()
     # [-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)? # float regex
-    print "old " +old
+    #print "old " +old
+    # TODO maybe we can combine this all into one regex search and replace?
     locPat = r"Location=\(.*?\)" # match location line regex
     locRep = "Location=(X=%f,Y=%f,Z=%f)" % trans
     new = re.sub(locPat, locRep, old, 1)
-    print "new " +new
+    rotPat = r"Rotation=\(.*?\)" # match rotation line regex
+    rotRep = "Rotation=(Pitch=%f,Yaw=%f,Roll=%f)" % rot
+    new = re.sub(rotPat, rotRep, new, 1)
+    scalePat = r"DrawScale3D=\(.*?\)" # match scale line regex
+    scaleRep = "DrawScale3D=(X=%f,Y=%f,Z=%f)" % scale
+    new = re.sub(scalePat, scaleRep, new, 1)
+    #print "new " +new
     pyperclip.setcb(new)
     pasteFromClipboard()
     #here we would have to wait long enough again for ued to finish,
