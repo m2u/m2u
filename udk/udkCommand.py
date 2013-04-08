@@ -108,7 +108,7 @@ def transformObject(objName, trans, rot, scale):
     # [-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)? # float regex
     print "old " +old
     locPat = r"Location=\(.*?\)" # match location line regex
-    locRep = "Location=(X=%f,Y=%f,Y=%f)" % trans
+    locRep = "Location=(X=%f,Y=%f,Z=%f)" % trans
     new = re.sub(locPat, locRep, old, 1)
     print "new " +new
     pyperclip.setcb(new)
