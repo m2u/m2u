@@ -3,6 +3,7 @@ import udkUI
 #import Tkinter
 import pyperclip
 import re
+import time
 """
 DELETE - Deletes the selected actors. # 
 DUPLICATE - Duplicates the selected actors. 
@@ -93,13 +94,26 @@ def transformObject(objName, trans, rot, scale):
     trans rot and scale are float tuples
     """
     selectByName(objName)
+    time.sleep(0.1) # WAIT
     keep = pyperclip.getcb() #backup current clipboard
-    cutToClipboard()
+    pyperclip.setcb("") #make the cb empty for while loop
+    cutToClipboard() # this will be executed somewhen, we don't know when
+    time.sleep(0.1) # WAIT
+    old = ""
+    #while old == "": # so we wait until the clipboard is filled by it
+    #    time.sleep(0.01)
+    # this loop might be an option, but it took forever, maybe we block
+    # some execution speed when doing this or so?
     old = pyperclip.getcb()
     # [-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)? # float regex
-    locPat = "Location=\(.*?\)\n" # match location line regex
+    print "old " +old
+    locPat = r"Location=\(.*?\)" # match location line regex
     locRep = "Location=(X=%f,Y=%f,Y=%f)" % trans
-    new = re.sub(locPat, locRep, old, 1) 
+    new = re.sub(locPat, locRep, old, 1)
+    print "new " +new
     pyperclip.setcb(new)
     pasteFromClipboard()
-    pyperclip.setcb(keep) #restore original clipboard
+    #here we would have to wait long enough again for ued to finish,
+    # before resetting the clipboard.
+    # TODO: find a sync-wait-whatever function from windows
+    #pyperclip.setcb(keep) #restore original clipboard
