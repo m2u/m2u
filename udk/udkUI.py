@@ -226,7 +226,9 @@ def fireCommand(command):
     """
     global gCommandField
     SendMessage(gCommandField, WM_SETTEXT, 0, str(command) )
-    PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)   
+    PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)
+    #SendMessage(gCommandField, WM_CHAR, VK_RETURN, 0)
+    #PostMessage(gCommandField, WM_KEYDOWN, VK_RETURN, 0)
     # VK_RETURN with WM_KEYDOWN didn't work from within maya, use WM_CHAR instead...
 
 def callExportSelected(filePath, withTextures):
