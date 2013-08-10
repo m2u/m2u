@@ -95,29 +95,59 @@ def transformObject(objName, trans, rot, scale):
     """
     selectByName(objName)
     time.sleep(0.1) # WAIT
-    keep = pyperclip.getcb() #backup current clipboard
+    #keep = pyperclip.getcb() #backup current clipboard TODO: reenable
     pyperclip.setcb("") #make the cb empty for while loop
     cutToClipboard() # this will be executed somewhen, we don't know when
     time.sleep(0.1) # WAIT
-    old = ""
+    #old = ""
     #while old == "": # so we wait until the clipboard is filled by it
     #    time.sleep(0.01)
     # this loop might be an option, but it took forever, maybe we block
     # some execution speed when doing this or so?
     old = pyperclip.getcb()
-    # [-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)? # float regex
-    #print "old " +old
-    # TODO maybe we can combine this all into one regex search and replace?
+    # we assume that transformation order is alwasy location, rotation, scale!
+    locInd = str.find(old,"Location=(")
+    assert locInd is not -1, "no Location attribute found, there is currently no solution implemented for that case." # TODO we don't know where to add it in that case, so leave it be for now
+    lastInd = locInd #index of the last translate information found
+    nextInd = str.find(old,"Rotation=(",locInd)
+    if nextInd is not -1: #found rotation as next, save the index
+        lastInd = nextInd
+    nextInd = str.find(old,"DrawScale3D=(",nextInd)
+    if nextInd is not -1: #found scale as next, save the index
+        lastInd = nextInd
+    #now we remove the transformation block from the text   
+    endInd = str.find(old,"\n",nextInd) + 1 # end of last statement
+    part1 = old[0:locInd] #the part before the transform stuff
+    part2 = old[endInd:] #the part after the transform stuff
+    #create our own transformation block
+    locRep = "Location=(X=%f,Y=%f,Z=%f)" % trans
+    rotRep = "Rotation=(Pitch=%d,Yaw=%d,Roll=%d)" % rot
+    scaleRep = "DrawScale3D=(X=%f,Y=%f,Z=%f)" % scale
+    #add them all together as a new object string
+    new = part1 + locRep + "\n" + rotRep + "\n" + scaleRep + "\n" + part2
+    print new
+    
+    """
     locPat = r"Location=\(.*?\)" # match location line regex
     locRep = "Location=(X=%f,Y=%f,Z=%f)" % trans
     new = re.sub(locPat, locRep, old, 1)
+    assert new is not None, "no Location attribute found, there is currently no solution implemented for that case." # TODO we don't know where to add it in that case, so leave it be for now
+    # TODO: rotate and scale are always after translate, in specific order. therefore, find the line in which the LOCATION is, and go on from there, might be faster than using the sub two times over again.
+    old = new
     rotPat = r"Rotation=\(.*?\)" # match rotation line regex
     rotRep = "Rotation=(Pitch=%f,Yaw=%f,Roll=%f)" % rot
-    new = re.sub(rotPat, rotRep, new, 1)
+    new = re.sub(rotPat, rotRep, old, 1)
+    if new is None: # no rotation line yet in text
+        new += rotRep + "/n"
+        
     scalePat = r"DrawScale3D=\(.*?\)" # match scale line regex
     scaleRep = "DrawScale3D=(X=%f,Y=%f,Z=%f)" % scale
     new = re.sub(scalePat, scaleRep, new, 1)
+    if new is None: # no scale line yet in text
+        new += scaleRep + "/n"
+        
     #print "new " +new
+    """
     pyperclip.setcb(new)
     pasteFromClipboard()
     #here we would have to wait long enough again for ued to finish,
