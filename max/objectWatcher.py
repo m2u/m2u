@@ -33,7 +33,13 @@ def onChanged():
 def getObjectData():
 	print "OW: Changehandler triggered"
 	# it collects the transform data of the objects in selection
-	pass
+	for o in mxs.selection:
+		trans = (o.position.y, o.position.x, o.position.z)
+		rot = (o.rotation.x, o.rotation.y, o.rotation.z)
+		scale = (o.scale.x, o.scale.y, o.scale.z)
+		# temp
+		import udk 
+		udk.transformObject(o.name, trans, (0,0,0), scale)
 
 def addChangeHandler():
 	""" Adds changehandler to the current selection in 3ds Max """
@@ -58,6 +64,8 @@ def removeChangeHandler():
 
 def syncObjects():
 	pass
+
+	
 """
 # uses static methods
 class ObjectWatcher(Watcher):

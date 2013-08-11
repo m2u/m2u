@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>m2u</string>
+   <string>m2u GUI</string>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
    <property name="geometry">

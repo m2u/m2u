@@ -51,19 +51,20 @@ def getViewData():
 	data = []
 	
 	vp = mxs.activeViewport
-	# we need to invert... for some... important reason!
-	inverseViewTM = mxs.Inverse( mxs.viewport.getTM() )
+	viewTM = mxs.viewport.getTM()
+	# We need to invert 
+	inverseViewTM = mxs.Inverse(viewTM)
 	
 	# MAKE THIS MORE EFFECTIVE; DONT CONVERT TO STRING AND BACK	
 	# get rotation data 
 	rot = inverseViewTM.rotationPart
-	ea_rot_str = str( mxs.execute( str(rot) + " as EulerAngles " ) ) # converting to euler angles
-	ea_rot_xyz = ea_rot_str.split( )[1:] # split by space and skip "eulerAngles"
+	ea_rot_str = str(mxs.execute(str(rot) + " as EulerAngles")) # converting to euler angles
+	ea_rot_xyz = ea_rot_str.split(" ")[1:] # split by space and skip "eulerAngles"
 	ea_rot_xyz[2] = ea_rot_xyz[2][:-1] # then skip ")" at last element
 		
 	# order data to match persp view axes
 	# default order of data 0-5 is: posX, posY, posZ, rotX, rotY, rotZ
-	# 	http://forums.epicgames.com/threads/712799-Convert-3dsmax-rotation-to-Unreal-Rotation
+	# http://forums.epicgames.com/threads/712799-Convert-3dsmax-rotation-to-Unreal-Rotation
 	# UDK rotation order: pitch(rotY in Max), yaw(rotZ in Max), roll(rotX in Max)
 	# pitch and roll are swapedp, and yaw is inverted
 	# this works for PERSPECTIVE and CAMERA views, but only when we subtract 90 degrees from the x rotation later
@@ -72,16 +73,24 @@ def getViewData():
 	# return [ data[1], data[0], data[2], data[3], -data[5], data[4] ] 
 	
 	# append position to data list
-	data.append( inverseViewTM.position.y )
-	data.append( inverseViewTM.position.x )
-	data.append( inverseViewTM.position.z )
+	data.append(inverseViewTM.position.y)
+	data.append(inverseViewTM.position.x)
+	data.append(inverseViewTM.position.z)
+
 	# append rotation to data list 
 	# TEMP CONVERSION TO UDK ROTATION VALUES HERE (MOVE TO UDKTRANSLATOR THEN)
+
+	# passiert jetz in udkCommand.py
 	DegToUnrRot = 182.0444
 
 	# data.append( int( ((float( ea_rot_xyz[0] )) - 90 ) * DegToUnrRot) % 65536 ) 
 	# data.append( int( float( ea_rot_xyz[2] ) * -1 * DegToUnrRot) % 65536 ) 
 	# data.append( int( float( ea_rot_xyz[1] ) * DegToUnrRot) % 65536 )
+
+	# this had worked a few months ago
+	# data.append( (((float( ea_rot_xyz[0] )) - 90 ) * DegToUnrRot) % 65536 ) 
+	# data.append( (float( ea_rot_xyz[2] ) * -1 * DegToUnrRot) % 65536 ) 
+	# data.append( (float( ea_rot_xyz[1] ) * DegToUnrRot) % 65536 )	
 
 	data.append( (((float( ea_rot_xyz[0] )) - 90 ) * DegToUnrRot) % 65536 ) 
 	data.append( (float( ea_rot_xyz[2] ) * -1 * DegToUnrRot) % 65536 ) 
@@ -94,12 +103,12 @@ def syncView():
 	"""
 	Constantly synchronizes the UDK viewport to the 3ds Max viewport when the view changes
 	"""
-	# reset FOV if it is wrong in persp mode (may have been changed by orthographic view)
-	import max
+	# Reset FOV if it is wrong in persp mode (may have been changed by orthographic view)
+	from m2u import max
 	if str(mxs.viewport.getType()) == "view_persp_user" and mxs.viewport.GetFOV() != max.udk_fov:
 		max.setViewFOV("udk")
 
-	# collect view data and send to hub
+	# Collect view data and send to hub
 	from max import viewWatcher
 	d = viewWatcher.getViewData()
 	from core import hub
