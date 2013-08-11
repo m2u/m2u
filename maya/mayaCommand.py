@@ -25,7 +25,7 @@ def perspChanged():
     rx = pm.getAttr('persp.rx')
     ry = pm.getAttr('persp.ry')
     rz = pm.getAttr('persp.rz')
-    m2u.editor.setCamera(-tz,tx,ty,rx,-ry,rz)
+    m2u.getEditor().setCamera(-tz,tx,ty,rx,-ry,rz)
 
 def createCameraTracker():
     global cameraScriptJob
