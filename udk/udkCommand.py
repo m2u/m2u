@@ -10,9 +10,16 @@ DUPLICATE - Duplicates the selected actors.
 """
 #see http://udn.epicgames.com/Three/EditorConsoleCommands.html
 
+#-- helper functions --
+def _convertRotationToUDK(rotTuple):
+    # fucking tuples are immutable
+    newrot=((rotTuple[0]*182.04444)%65536, (rotTuple[1]*182.04444)%65536, (rotTuple[2]*182.04444)%65536)
+    return newrot
 
+#-- command functions --
 def setCamera(x,y,z,rx,ry,rz):
-    command = "BUGITGO %f %f %f %f %f %f" % (x,y,z,rx,ry,rz)   
+    rot=_convertRotationToUDK((rx,ry,rz))
+    command = "BUGITGO %f %f %f %f %f %f" % (x,y,z,rot[0],rot[1],rot[2])   
     udkUI.fireCommand(command)
 
 #SELECT - General selection commands 
@@ -90,9 +97,12 @@ def exportMeshToFile(meshSig, folder, fileName, withTextures=True):
 
 def transformObject(objName, trans, rot, scale):
     """
+    transforms an object by cutting it from the level,
+    replacing parameters and pasting the changed text to the level
     objName is only the instance name
-    trans rot and scale are float tuples
+    trans rot and scale are float tuples (f,f,f)
     """
+    rot = _convertRotationToUDK(rot)
     selectByName(objName)
     time.sleep(0.1) # WAIT
     #keep = pyperclip.getcb() #backup current clipboard TODO: reenable
