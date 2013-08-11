@@ -2,11 +2,7 @@
 # will initialize the system to use the maya program modules
 # and create the UI attached to maya
 
-from core import hub;
+import m2u
 
-def startup():
-    hub.initialize("maya");
+m2u.initialize("maya")
 
-
-# do it
-startup();

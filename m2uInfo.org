@@ -1,0 +1,69 @@
+
+
+
+* initialization, modularity
+momentan rufen die program-spezifischen initalization scripts hub.initialize mit strings auf, hub lädt dann die entsprechenden module, anhand vom übergebenen string, d.h. die möglichen programme sind momentan in hub fest gecoded
+um hier modular zu bleiben, ohne dass bei einem zusätzlichem program hub.py geändert werden muss, sollten entweder hub den string direkt in einen modulnamen konvertieren (sollte mit python ja möglich sein) alternativ müssten die init-scripts selbst die module laden und an hub werden dann die geladenen module übergeben statt program-namen
+
+* maya stuff
+the riverbank pyQt seems not to work with maya (dll load failed: the specified procedure could not be found) downloading this build instead http://code.google.com/p/pyqt4-win64-binaries/downloads/list works as it should.
+
+** VK_RETURN WM_KEYDOWN problem
+aus mayas python heraus funktioniert die WM_KEYDOWN message nicht mit allen keys es ist z.b. machbar, leerzeichen zu senden, aber bestimmte Buchstaben oder eben insbesondere VK_RETURN geht nicht. Es scheint wohl nichts mit den privilegien der threads zu tun zu haben, da ja die message an sich ankommt. Es muss wohl eher der KeyCode der ankommt falsch sein. warum der wert aus maya heraus scheinbar nicht mehr dem original entspricht ist nicht verständlich.
+Aus der Konsole heraus (Idle) funktioniert alles. Jeder Code kommt mit WM_KEYDOWN an. Die Alternative zu WM_KEYDOWN ist WM_CHAR, welches vermutlich statt nur "down" eben mehr ein "down and up" sendet. generell ist WM_KEYUP aber unwichtig, das dürfte also nicht die wurzel es problems sein.
+Die ersten versuche WM_CHAR mit chars (einzelnen zeichen als string) in python zu füllen gingen nat¨rlich daneben, weil in python die strings natürlich kein einzelner char ist. nach also einem ganzen tag rumgepfriemel klappte dann WM_CHAR mit natürlich einfach dem code des chars, den man senden will, also VK_RETURN. und das auch aus maya heraus.
+WM_CHAR scheint also generell sicherer zu sein als WM_KEYDOWN
+
+** features:
+toggle wireframe in maya = wireframe in ued
+5 = lit oder unlit
+das sollte nat¨rlich über settings einstellbar sien, ob man das will
+
+setup distancen, clipping planes etc.
+rename objekte, bzw. generell ändern von attributen?
+
+*** security check on sync?
+check if names in udk are the same as the just exported names in maya, if not generate new names or warn user? 
+es könnte der fall sein, das bestimmte namen in udk schon anderweitig vorhanden sind, udk dann eigene namen vergibt und die namen nicht mehr übereinstimmen. is natürlich ne menge aufwand, wenn alle neu erstellten objekte auf namen hin überprüft werden müssen. automatisch helfen ist vermutlich eh nicht möglich, da man ja nicht genau weiß welches falsch benannte objekt in udk nun welchem in maya entspricht und so. man kann nur den user warnen, dass was schief gelaufen ist
+
+* undo redo
+das problem ist, dass nicht sicher ist, das nicht in udk etwas getan wurde, was nicht dem undo/redo aus mayax entspricht
+
+* export objects from udk
+das problem ist dass das export command NUR bei staticMeshes funktioniert. Der export erzeugt zudem mehrere files, (3 obj files) von denen nur eines den mesh enthält. Packagenamen o.ä. sind sowieso nicht vorhanden im exportierten.
+Fbx export ist nicht möglich
+Texturen lassen sich über das command nicht exportieren, wenn nicht die source-datei sowieso iwo auf der platte zu finden ist.
+
+die besser funktionierende alternative ist es, einen mesh statt aus dem ContentBrowser oder per command, aus der map zu exportieren. hierbei muss über das menü gegangen werden. 
+Das resultat ist eine obj und eine mtl datei, dazu noch die texturen, wenn gewünscht.
+das problem hierbei ist, dass ein mesh hier mit seiner aktuellen pos im weltraum exportiert wird. Mesh Name in der Datei entspricht der StaticMesh Instanz (StaticMesh_23 etc.) muss also ebenfalls beim import oder so umbenannt werden iwi.
+
+um den export über die map zu automatisieren, müsste also ein reiner, neuer static mesh mit dem gewünschten model in der map im origin platziert werden.
+dann selectiver export mit
+F10 (menu), F (File), E (Export), S (Selected Only), paste file path, Enter (save), Enter (Yes textures)
+diese windows messages müssten einfach direkt ans UDK hauptfenster gesendet werden
+danach muss natürlich evtl. die mtl datei umgeschrieben, und die bilddateien umbenannt werden um den eigentlichen namen zu entsprechen.
+
+
+** shobjidl
+um das mal festzuhalten.
+die shobjidl.idl gibts im windows 7 und .net SDK.
+diese jagt man durch midl.exe (nutze visual studio 2010 command prompt, damit die pfade richtig gesetzt sind, dann findet der das auch und den cl.exe compiler)
+damit wird eine shobjidl.tlb erzeugt, die man mit comtypes (client.GetModule(pfad)) in eine .py wrappen lassen kann. vor der erzeugung der readable name datei shobjidl.py wird aber die erzeugte id-.py datei (lange nummer) gecheckt und es treten an 2 stellen assertion fails auf. die entsprechenden assert lines hab ich auskommentiert und die shobjidl.py anhand einer anderen vorhandenen datei entsprechend per hand erzeugt. merke, dass der pfad zur zur verwendung genutzten tlb datei in der id python datei steht. will man das alles verschicken, sollte man sichergehen dass man den pfad iwi relativ setzt oda so.
+danach funktioniert from comtypes.gen import shobjidl und alle enthaltenen Interfaces werden gelistet un so
+
+** letzte chance
+das mit shobjidl tut nicht, windows gibt immer null pointer access un shit, evtl. ist doch die problematik dass diese asserts stimmen muessen, weil sie iwo da drin verwendet werden oder so. vielleicht würde es aber auch gar nicht gehen, weil die library nicht korrekt ist oder so murks.
+
+meine versuche, das versteckte Edit field mit dem senden von VK_RETURN auf das 5te tab-stop element im dlg zu senden (der erste pfeil in der adressleiste) gingen nu auch daneben, es passiert einfach nix, evtl. muss das fenster tatsächlich fokus haben. andererseits ht das VK_RETURN nichtmal beim abbrechen button funktioniert, was etwas verwunderlich ist, aber vielleicht reagieren buttons auf sowas nur, wenn sie im fokus sind, und stattdessen muss ein btn_press command oder so gesendet werden? evtl. würde das auch bei dem adresszeilen-element tun dann, da das ja auch ne art button zu sein scheint.
+soweit ich mich erinnere scheint es aber auch nichts zu bringen, dem versteckten Edit field einen text zu setzen, wenn es nicht sichtbar ist, bzw. fokus hat?
+evtl. liesse sich noch etwas drehen, indem man die threads attached, evtl. hat man dann bessere eingabe-rechte, oder man kann dann auch das fenster als fokus nach vorne holen und hat damit bessere möglichkeiten.
+sollte das acuh nicht tun, muss man mal im interent fragen, ob jemand ne bessere idee hat. dafür sollte aber erstmal diverse andere funktionalität stehen. z.b. das bewegen von in beiden progs vorhandenen objekten un so ;)
+
+* editing objects
+when editing objects that already are in udk, we must cut those objects from udk, edit parameters and paste them back. 
+this has several disadvantages: it is slow, we always must wait for copy and paste commands to finish execution (and we currently don't know how te be sure that a command was executed, we just wait a certain ammount of time) and the worst of all maybe: 
+** it may break links that exist in udk
+if an object is somehow referenced by it's name in udk, which is not so uncommon anymore (good old time where one used the tag instead of the name, haha)
+if you edit an object in udk or it's name is changed, udk changes the references. but if we cut the object, udk might kill the connection (stuff like kismet). If those links keep the name, after inserting the object, the connection would be there again, but if not, well, this might be an important case to tell the user to not edit objects that are referenced in kismet or so with this tool. 
+there is nothing we could do to prevent this from happening aside from using a different unsafe technique of transforming objects through key and mouse inputs into the viewport :D

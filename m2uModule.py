@@ -1,6 +1,9 @@
-#NOTE: NOT USED ANYMORE
+# the actual m2u module file
+# information herein should be the only reference all other files should need to know.
 
-import sys
+
+# this is the core of m2u the only and first module to be imported and initialize called from the program specific startup scripts
+
 program = None
 editor = None
 
@@ -21,11 +24,11 @@ def initProgram(programName):
     global program
     
     if programName == "maya":
-        from m2u import maya
+        import maya
         program = maya
 
     elif programName == "max":
-        from m2u import max
+        import max
         reload(max) # for testing
         # create the GUI by loading the .ui file and connecting it to functionality
         from max import maxGUI
@@ -37,10 +40,10 @@ def initProgram(programName):
 
 def initEditor(editorName):
     global editor
-    from m2u import udk
+    import udk
     editor = udk
     print "EDI:", editor
 
 def alive():
-    print("hub hier")
+    print("m2u module (hub) is alive")
 
