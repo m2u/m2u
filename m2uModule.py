@@ -4,8 +4,16 @@
 
 # this is the core of m2u the only and first module to be imported and initialize called from the program specific startup scripts
 
-program = None
-editor = None
+__program = None
+__editor = None
+
+def getProgram():
+    global __program
+    return __program
+
+def getEditor():
+    global __editor
+    return __editor
 
 def initialize(programName,editorName="udk"):
     """
@@ -21,11 +29,11 @@ def initProgram(programName):
     """
     Load the correct module for the program
     """
-    global program
+    global __program
     
     if programName == "maya":
         import maya
-        program = maya
+        __program = maya
 
     elif programName == "max":
         import max
@@ -34,15 +42,17 @@ def initProgram(programName):
         from max import maxGUI
         reload(maxGUI)
         maxGUI.launchGUI()
-        program = max
+        __program = max
     else:
         print("undefined program")
 
+    print "PROG:", __program
+
 def initEditor(editorName):
-    global editor
+    global __editor
     import udk
-    editor = udk
-    print "EDI:", editor
+    __editor = udk
+    print "EDI:", __editor
 
 def alive():
     print("m2u module (hub) is alive")

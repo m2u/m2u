@@ -6,3 +6,4 @@ import m2u
 
 m2u.initialize("maya")
 
+# create UI here
