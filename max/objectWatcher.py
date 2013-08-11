@@ -9,11 +9,9 @@
 
 from Py3dsMax import mxs
 
-
 # only keep one changehandler for the current selection as a whole
 # we need to keep reference to dismiss properly
 changeHandler = None 
-
 
 def addCallback():
 	mxs.callbacks.addScript(mxs.pyhelper.namify("selectionSetChanged"), "python.exec(\"objectWatcher.addChangeHandler()\")", id = mxs.pyhelper.namify("objectWatcher"))
@@ -65,7 +63,7 @@ def removeChangeHandler():
 def syncObjects():
 	pass
 
-	
+
 """
 # uses static methods
 class ObjectWatcher(Watcher):

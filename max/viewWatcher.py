@@ -17,7 +17,7 @@ def removeCallback():
 	"""
 	Remove viewportChange callback from the current 3ds Max session
 	"""
-	mxs.callbacks.removeScripts( id = mxs.pyhelper.namify("viewWatcher") )
+	mxs.callbacks.removeScripts(id = mxs.pyhelper.namify("viewWatcher"))
 	print "VW: Viewport change callback removed"
 
 def addTimer(interval):
@@ -28,7 +28,7 @@ def addTimer(interval):
 	from core.repeatTimer import RepeatTimer
 	from max import viewWatcher
 	global syncTimer
-	syncTimer = RepeatTimer( viewWatcher.syncView, interval )
+	syncTimer = RepeatTimer(viewWatcher.syncView, interval)
 	syncTimer.start()
 
 	print "VW: Timer added"

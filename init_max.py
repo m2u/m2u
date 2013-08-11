@@ -1,25 +1,31 @@
 # Called by a macroscript from 3ds Max
 
+# Add the parent directory so python finds our m2u module
 import sys, os
 baseDir = os.path.join(
 	os.path.dirname(os.path.realpath(__file__)), ".."
 )
 sys.path.append(baseDir)
-print "BASEDIR", baseDir
-import m2u
 
 def startup():
-	# THIS ADDS THEM TO THE GLOBAL SCOPE SO IT CAN BE ACCESSED BY MXS CALLBACKS!
-	from m2u.max import viewWatcher
-	reload(viewWatcher) # for testing
+    import m2u
+    reload(m2u)
+    m2u.initialize("max")
 
-	from m2u.max import objectWatcher
-	reload(objectWatcher) # for testing
+    # Create GUI here by loading the UI file and hand it the reference to m2u
+    from m2u.max import maxGUI
+    reload(maxGUI)
+    maxGUI.launchGUI()
 
-	from m2u.core import hub
-	reload(hub) # for testing
+    # THIS ADDS THEM TO THE GLOBAL SCOPE SO THEY CAN BE ACCESSED BY MXS CALLBACKS!
 
-	hub.initialize("max")
+    # from m2u.max import viewWatcher
+    # reload(viewWatcher) # for testing
 
-# do it
+    # from m2u.max import objectWatcher
+    # reload(objectWatcher) # for testing
+
+    # from m2u.core import hub
+    # reload(hub) # for testing
+
 startup()
