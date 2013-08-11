@@ -1,13 +1,9 @@
 
 # maya module init file
 
-def getProgName():
-    return "maya"
-
-def watchCamera():
-    """
-    starts to watch/ sync the viewport camera
-    """
+# for the sake of having a file with a meaningful name,
+# all actual stuff is in mayaModule.py instead of this __init__.py
+from mayaModule import *
     
     
 
