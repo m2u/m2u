@@ -1,7 +1,7 @@
 # This module is responsible to install/remove a view callback
 # and collect the current view transform data when it changes
 # so we can sync the UDK view to our 3ds Max view
-
+import m2u
 from Py3dsMax import mxs
 
 syncTimer = None # to stop and delete our timer later
@@ -25,8 +25,8 @@ def addTimer(interval):
 	Instead of syncing on view change (using a callback),
 	installs a timer that syncs view every given interval
 	"""
-	from core.repeatTimer import RepeatTimer
-	from max import viewWatcher
+	from m2u.helper.repeatTimer import RepeatTimer
+	from m2u.max import viewWatcher
 	global syncTimer
 	syncTimer = RepeatTimer(viewWatcher.syncView, interval)
 	syncTimer.start()
@@ -73,6 +73,10 @@ def getViewData():
 	# return [ data[1], data[0], data[2], data[3], -data[5], data[4] ] 
 	
 	# append position to data list
+	# data.append(inverseViewTM.position.y)
+	# data.append(inverseViewTM.position.x)
+	# data.append(inverseViewTM.position.z)
+
 	data.append(inverseViewTM.position.y)
 	data.append(inverseViewTM.position.x)
 	data.append(inverseViewTM.position.z)
@@ -80,21 +84,13 @@ def getViewData():
 	# append rotation to data list 
 	# TEMP CONVERSION TO UDK ROTATION VALUES HERE (MOVE TO UDKTRANSLATOR THEN)
 
-	# passiert jetz in udkCommand.py
-	DegToUnrRot = 182.0444
-
-	# data.append( int( ((float( ea_rot_xyz[0] )) - 90 ) * DegToUnrRot) % 65536 ) 
-	# data.append( int( float( ea_rot_xyz[2] ) * -1 * DegToUnrRot) % 65536 ) 
-	# data.append( int( float( ea_rot_xyz[1] ) * DegToUnrRot) % 65536 )
-
-	# this had worked a few months ago
 	# data.append( (((float( ea_rot_xyz[0] )) - 90 ) * DegToUnrRot) % 65536 ) 
 	# data.append( (float( ea_rot_xyz[2] ) * -1 * DegToUnrRot) % 65536 ) 
-	# data.append( (float( ea_rot_xyz[1] ) * DegToUnrRot) % 65536 )	
+	# data.append( (float( ea_rot_xyz[1] ) * DegToUnrRot) % 65536 )
 
-	data.append( (((float( ea_rot_xyz[0] )) - 90 ) * DegToUnrRot) % 65536 ) 
-	data.append( (float( ea_rot_xyz[2] ) * -1 * DegToUnrRot) % 65536 ) 
-	data.append( (float( ea_rot_xyz[1] ) * DegToUnrRot) % 65536 )
+	data.append((float(ea_rot_xyz[0]))-90) 
+	data.append(float(ea_rot_xyz[2])*-1) 
+	data.append(float(ea_rot_xyz[1]))
 
 	# print data
 	return data
@@ -104,14 +100,12 @@ def syncView():
 	Constantly synchronizes the UDK viewport to the 3ds Max viewport when the view changes
 	"""
 	# Reset FOV if it is wrong in persp mode (may have been changed by orthographic view)
-	from m2u import max
-	if str(mxs.viewport.getType()) == "view_persp_user" and mxs.viewport.GetFOV() != max.udk_fov:
-		max.setViewFOV("udk")
+	program = m2u.core.getProgram()
+	if str(mxs.viewport.getType()) == "view_persp_user" and mxs.viewport.GetFOV() != program.udkFov:
+		program.setViewFOV("udk")
 
 	# Collect view data and send to hub
-	from max import viewWatcher
-	d = viewWatcher.getViewData()
-	from core import hub
-	hub.editor.setCamera(d[0], d[1], d[2], d[3], d[4], d[5])
-
-	# print "VW: Synching..."
+	from m2u.max import viewWatcher
+	data = viewWatcher.getViewData()
+	editor = m2u.core.getEditor()
+	editor.setCamera(data[0], data[1], data[2], data[3], data[4], data[5])
