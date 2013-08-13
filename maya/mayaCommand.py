@@ -3,15 +3,17 @@
 import m2u
 import pymel.core as pm
 
-def setViewFOF( degrees ):
-    pass
+def setCameraFOV( degrees ):
+    import pymel.core as pm
+    cam = pm.nodetypes.Camera('perspShape',query=True)
+    cam.setHorizontalFieldOfView(degrees)
 
 def toggleSync( sync ):
     """
     activate or deactivate connection to UDK
     """
     if sync:
-        m2u.getEditor().connectToInstance() # find ued
+        m2u.core.getEditor().connectToInstance() # find ued
         createCameraTracker()
         
     else:
@@ -25,7 +27,7 @@ def perspChanged():
     rx = pm.getAttr('persp.rx')
     ry = pm.getAttr('persp.ry')
     rz = pm.getAttr('persp.rz')
-    m2u.getEditor().setCamera(-tz,tx,ty,rx,-ry,rz)
+    m2u.core.getEditor().setCamera(-tz,tx,ty,rx,-ry,rz)
 
 def createCameraTracker():
     global cameraScriptJob

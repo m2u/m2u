@@ -4,6 +4,8 @@
 
 import m2u
 
-m2u.initialize("maya")
+m2u.core.initialize("maya")
 
-# create UI here
+# create UI here, send the initialized m2u module to the ui
+
+#createUI(m2u)
