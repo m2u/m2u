@@ -37,22 +37,14 @@ def initProgram(programName):
 
     elif programName == "max":
         import max
-        reload(max) # for testing
-        # create the GUI by loading the .ui file and connecting it to functionality
-        from max import maxGUI
-        reload(maxGUI)
-        maxGUI.launchGUI()
         __program = max
     else:
         print("undefined program")
-
-    print "PROG:", __program
 
 def initEditor(editorName):
     global __editor
     import udk
     __editor = udk
-    print "EDI:", __editor
 
 def alive():
     print("m2u module (hub) is alive")
