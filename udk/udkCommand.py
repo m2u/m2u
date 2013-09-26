@@ -131,7 +131,7 @@ def transformObject(objName, trans, rot, scale):
         return
     # we assume that transformation order is alwasy location, rotation, scale!
     locInd = str.find(old,"Location=(")
-    assert locInd is not -1, "no Location attribute found, there is currently no solution implemented for that case." # TODO we don't know where to add it in that case, so leave it be for now
+    assert locInd is not -1, "m2u: No Location attribute found, there is currently no solution implemented for that case." # TODO we don't know where to add it in that case, so leave it be for now
     lastInd = locInd #index of the last translate information found
     nextInd = str.find(old,"Rotation=(",locInd)
     if nextInd is not -1: #found rotation as next, save the index

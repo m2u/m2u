@@ -196,7 +196,7 @@ def attachThreads(hwnd):
     """
     thread = GetWindowThreadProcessId(hwnd, 0) #udk thread
     thisThread = threading.current_thread().ident #program thread
-    print "attaching threads",thread,"and",thisThread
+    print "# m2u: Attaching threads",thread,"and",thisThread
     AttachThreadInput(thread, thisThread, True)
     
 def _getWindows(hwnd, lParam):
@@ -212,7 +212,7 @@ def _getWindows(hwnd, lParam):
         #    thread = GetWindowThreadProcessId(hwnd, 0)
         #    print "maya thread:",thread
         if "Unreal Development Kit" in buff.value:
-            print "found UDK"
+            print "# m2u: Found UDK"
             global gMainWindow
             gMainWindow = hwnd
             
@@ -230,8 +230,8 @@ def _getWindows(hwnd, lParam):
             hFileMenu = GetSubMenu(hMenu,0)
             hExportMenu = GetSubMenu(hFileMenu, 13)
             gMenuExportID = GetMenuItemID(hExportMenu, 1)
-
-            return False # we foun udk, no further iteration required
+            
+            return False # we found udk, no further iteration required
     return True
 
 def connectToUEd():

@@ -26,12 +26,6 @@ rename objekte, bzw. generell ändern von attributen?
 check if names in udk are the same as the just exported names in maya, if not generate new names or warn user? 
 es könnte der fall sein, das bestimmte namen in udk schon anderweitig vorhanden sind, udk dann eigene namen vergibt und die namen nicht mehr übereinstimmen. is natürlich ne menge aufwand, wenn alle neu erstellten objekte auf namen hin überprüft werden müssen. automatisch helfen ist vermutlich eh nicht möglich, da man ja nicht genau weiß welches falsch benannte objekt in udk nun welchem in maya entspricht und so. man kann nur den user warnen, dass was schief gelaufen ist
 
-
-*** fix my udk camera button
-wenn die camera in maya über kopf 180 grad und dann roll 180 grad gedreht wird, statt um y 180 grad, kann man die camera in udk nicht mehr gut nutzen, da die bewegungen pro achse beschränkt sind. (die kamera steht gewissermaßen auf dem kopf) 
-
-um die camera wieder vernünftig nutzen zu können müssen diese rotations wieder gefixt werden, d.h. das roll muss entfernt werden. dies könnte man entweder einfach rausnehmen, oder man versucht den gleichen winkel zu setzen indem man (z.b. auch der maya camera) eben um z und x achse 180 abzieht und y 180 addiert
-
 ** script jobs mit parameter
 das problem einem script job einen parameter zu übergeben ist, dass es direkt dafür keine eingeplante möglichkeit gibt. 
 das command kann aber auch als string übergeben werden, in welchen man also den parameter reinschreiben kann.
@@ -42,6 +36,12 @@ Das problem war, dass ich die funktion mit leading underscore maskiert hatte _on
 alternativen sind den inhalt der funktion direkt als string ins command zu schreiben, bzw. als string zwischenzuspeichern und die string variable zu übergeben,
 oder den parameter als globale variable zu halten und in der sj-funktion eben auf diese globale var zuzugreifen.
 
+* fix my udk camera button, camera achsen clamping
+wenn die camera in maya über kopf 180 grad und dann roll 180 grad gedreht wird, statt um y 180 grad, kann man die camera in udk nicht mehr gut nutzen, da die bewegungen pro achse beschränkt sind. (die kamera steht gewissermaßen auf dem kopf) 
+
+um die camera wieder vernünftig nutzen zu können müssen diese rotations wieder gefixt werden, d.h. das roll muss entfernt werden. dies könnte man entweder einfach rausnehmen, oder man versucht den gleichen winkel zu setzen indem man (z.b. auch der maya camera) eben um z und x achse 180 abzieht und y 180 addiert
+
+genauso scheint es manchmal (sehr selten) zu passieren, dass eine maya rotation (über kopf) in udk nicht umgesetzt wird (weil eine achse blockiert) die frage ist wie häufig tritt das im echten gebrauch auf, tritt es auch mit max auf (oder ist die max-camera auch achsen-beschränkt). evtl. müsste man dann herausfinden welche achsenkombination im udk probleme macht und die rotation im falle einer achsen-wert-überschreitung umrechnen. ist mir aber bisher seeehr selten passiert ,genau 1 mal ;)
 
 * undo redo
 das problem ist, dass nicht sicher ist, das nicht in udk etwas getan wurde, was nicht dem undo/redo aus mayax entspricht
@@ -107,3 +107,10 @@ if you edit an object in udk or it's name is changed, udk changes the references
 there is nothing we could do to prevent this from happening aside from using a different unsafe technique of transforming objects through key and mouse inputs into the viewport :D
 
 
+
+
+* TODO:
+** reestablish correct selection after transforming
+die udk objekte wurden ja gelöscht und einzeln wieder eingefügt, weswegen das letzte objekt zwar selektiert ist, aber eben nicht alle. nach einem transform command sollte die aktuelle selection erneut zugewiesen werden.
+das problem hierbei ist, dass die transformation aus den script jobs der einzelnen objekte heraus ausgeführt wird. man könnte zwar am ende vom script job eine funktion aufrufen, die wieder alles selektiert, das wäre aber dann bei jedem objekt der fall, werden 10 objekte bewegt, wird 10 mal die selektion restored und danach wieder gekillt.
+man müsste hierfür herausfinden wann das letzte objekt geupdated wurde...

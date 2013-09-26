@@ -120,13 +120,17 @@ def _onSelectionChangedCB(data):
     global _objectScriptJobs
     _deleteObjectSJs()
     m2u.core.getEditor().deselectAll()
-    time.sleep(0.1)
+    #time.sleep(0.1)
     for obj in pm.selected():
         #print "obj is "+ obj.name()
+        # only track transform-nodes
+        if obj.nodeType() != "transform":
+            continue
+        #since the sj is in maya namespace, we need the full qualifier to onObjChanged
         sj = pm.scriptJob( attributeChange=[obj.name()+'.inverseMatrix', "m2u.core.getProgram().onObjectChangedSJ(\""+obj.name()+"\")"] )
         #sj = pm.scriptJob( attributeChange=[obj+'.inverseMatrix', _onObjectChangedCmd"+obj+"] )
         _objectScriptJobs.append(sj)
-        m2u.core.getEditor().selectByNames(obj.name())
+        m2u.core.getEditor().selectByNames([obj.name()])
 
 
 def _deleteObjectSJs():
