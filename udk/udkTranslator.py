@@ -11,6 +11,9 @@
 #clipboard.clipboard_get()
 
 
+#from helper.ObjectInfo import ObjectInfo
+
+
 def meshToText():
     """
     converts a mesh info to UDK static mesh text

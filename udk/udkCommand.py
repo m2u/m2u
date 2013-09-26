@@ -18,6 +18,18 @@ def _convertRotationToUDK(rotTuple):
 
 #-- command functions --
 def setCamera(x,y,z,rx,ry,rz):
+    """    while rx>360:
+        rx = rx-360
+    while rx<0:
+        rx = rx+360
+    while ry>360:
+        ry = ry-360
+    while ry<0:
+        ry = ry+360
+    while rz>360:
+        rz = rz-360
+    while rz<0:
+        rz = rz+360             """
     rot=_convertRotationToUDK((rx,ry,rz))
     command = "BUGITGO %f %f %f %f %f %f" % (x,y,z,rot[0],rot[1],rot[2])   
     udkUI.fireCommand(command)
@@ -104,17 +116,19 @@ def transformObject(objName, trans, rot, scale):
     """
     rot = _convertRotationToUDK(rot)
     selectByName(objName)
-    time.sleep(0.1) # WAIT
+    #time.sleep(0.1) # WAIT
     #keep = pyperclip.getcb() #backup current clipboard TODO: reenable
     pyperclip.setcb("") #make the cb empty for while loop
     cutToClipboard() # this will be executed somewhen, we don't know when
-    time.sleep(0.1) # WAIT
+    #time.sleep(0.1) # WAIT
     #old = ""
     #while old == "": # so we wait until the clipboard is filled by it
     #    time.sleep(0.01)
     # this loop might be an option, but it took forever, maybe we block
     # some execution speed when doing this or so?
     old = pyperclip.getcb()
+    if old == "":
+        return
     # we assume that transformation order is alwasy location, rotation, scale!
     locInd = str.find(old,"Location=(")
     assert locInd is not -1, "no Location attribute found, there is currently no solution implemented for that case." # TODO we don't know where to add it in that case, so leave it be for now
@@ -135,7 +149,7 @@ def transformObject(objName, trans, rot, scale):
     scaleRep = "DrawScale3D=(X=%f,Y=%f,Z=%f)" % scale
     #add them all together as a new object string
     new = part1 + locRep + "\n" + rotRep + "\n" + scaleRep + "\n" + part2
-    print new
+    #print new
     
     """
     locPat = r"Location=\(.*?\)" # match location line regex

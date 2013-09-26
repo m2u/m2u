@@ -26,6 +26,23 @@ rename objekte, bzw. generell ändern von attributen?
 check if names in udk are the same as the just exported names in maya, if not generate new names or warn user? 
 es könnte der fall sein, das bestimmte namen in udk schon anderweitig vorhanden sind, udk dann eigene namen vergibt und die namen nicht mehr übereinstimmen. is natürlich ne menge aufwand, wenn alle neu erstellten objekte auf namen hin überprüft werden müssen. automatisch helfen ist vermutlich eh nicht möglich, da man ja nicht genau weiß welches falsch benannte objekt in udk nun welchem in maya entspricht und so. man kann nur den user warnen, dass was schief gelaufen ist
 
+
+*** fix my udk camera button
+wenn die camera in maya über kopf 180 grad und dann roll 180 grad gedreht wird, statt um y 180 grad, kann man die camera in udk nicht mehr gut nutzen, da die bewegungen pro achse beschränkt sind. (die kamera steht gewissermaßen auf dem kopf) 
+
+um die camera wieder vernünftig nutzen zu können müssen diese rotations wieder gefixt werden, d.h. das roll muss entfernt werden. dies könnte man entweder einfach rausnehmen, oder man versucht den gleichen winkel zu setzen indem man (z.b. auch der maya camera) eben um z und x achse 180 abzieht und y 180 addiert
+
+** script jobs mit parameter
+das problem einem script job einen parameter zu übergeben ist, dass es direkt dafür keine eingeplante möglichkeit gibt. 
+das command kann aber auch als string übergeben werden, in welchen man also den parameter reinschreiben kann.
+
+wenn die funktion allerdings als string übergeben wird, muss der komplette modul-pfad zur funktion in den string geschrieben werden, da diese sonst nicht gefunden wird. Das gab aber aus irgendeinem grund probleme.
+Das problem war, dass ich die funktion mit leading underscore maskiert hatte _onObjectChangedSJ(obj) wodurch die funktion in m2u.core.getProgram() (das maya module) nicht sichtbar war. potentiell wird sowas nicht durch import* in andere module importiert?
+
+alternativen sind den inhalt der funktion direkt als string ins command zu schreiben, bzw. als string zwischenzuspeichern und die string variable zu übergeben,
+oder den parameter als globale variable zu halten und in der sj-funktion eben auf diese globale var zuzugreifen.
+
+
 * undo redo
 das problem ist, dass nicht sicher ist, das nicht in udk etwas getan wurde, was nicht dem undo/redo aus mayax entspricht
 
@@ -60,6 +77,27 @@ soweit ich mich erinnere scheint es aber auch nichts zu bringen, dem versteckten
 evtl. liesse sich noch etwas drehen, indem man die threads attached, evtl. hat man dann bessere eingabe-rechte, oder man kann dann auch das fenster als fokus nach vorne holen und hat damit bessere möglichkeiten.
 sollte das acuh nicht tun, muss man mal im interent fragen, ob jemand ne bessere idee hat. dafür sollte aber erstmal diverse andere funktionalität stehen. z.b. das bewegen von in beiden progs vorhandenen objekten un so ;)
 
+* attaching the threads
+windows AttachThreadInput function , implementiert in udkUI.py
+nach dem attachen der threads funktioniert nun auch SendMessage mit VK_RETURN statt PostMessage, und da SendMessage wartet, bis der ziel-thread die message bearbeitet hat, sollte das "warten und hoffen" damit erledigt sein.
+
+
+* udk save to clip pad , menu und hotkeys nutzen, modifier-keys
+es ist ein neues problem aufgetaucht, was irgendwie nur ab und zu vorkommt und nur wenn oft hintereinander copy-paste commands geposted werden.
+UEd hat eine "save to clip pad" funktion für ein internes clip board für mit namen versehene clips. Das Tastenkürzel dafür ist Ctrl+Shift+C ein äquivalent in dem Menü existiert nicht. Das command EDIT COPY das wir nutzen macht in den Docs auch keine Aussage darüber, dass man Ctrl+C oder eben save-to-clip-pad ausführen könnte.
+
+evtl. muss statt dem command der viewport gefunden und direkt Ctrl+C an den viewport gesendet werden, evtl. tuts das auch wenn man es direkt ans main-window sendet.
+diese variante könnte, da nur ein command statt zwei (text setzen, text abschicken) evtl. sogar weniger belastung für das message-system darstellen. die frage ist ob es zuverlässig ist (oder braucht es den fokus) andererseits ist nun EDIT COPY senden ja auch nicht zuverlässig
+
+der menu-eintrag Copy wird auch zu save-to-clip-pad, wenn man während des clickens die Shift taste gedrückt hält, vermutlich treten die ungewünschten aufrufe also auf, wenn man während dem herumschieben in maya die shift-taste benutzt. eine alternative, um doch das command zu nutzen könnte also sein, windows zu zwingen vorm senden den shift-state abzuschalten. evtl. muss das auch bei den alternativen, ein copy vom UEd zu kriegen beachtet werden, da scheinbar bei allen varianten der shift-state geprüft wird.
+ich muss mal schauen wie das bei den windows funktionen ist, ob man beim senden von key-combos ans hauptfenster z.b. den shift-state explizit mitsenden kann
+
+evtl. sollte man auch für andere commands eher gebrauch von menu items oder hotkeys nutzen, da dies generell eine message weniger sein sollte. z.b. gibt es auch menu einträge für select None etc.
+
+
+auch andere modifier keys machen (manchmal) probleme. hält man in maya während dem bewegen z.b. die ctrl-taste gedrückt, passier im udk gar nix. es bedarf also unbedingt einer windows funktion um modifier keys vorm command senden zu disablen und den vorherigen status danach wieder herzustellen, wenn das mal nicht die kontrolle in maya unmöglich macht 
+evtl. passier sowas auch nur bei einzelnen objekten, andererseits scheinen sowieso einzelne objekte immer mal aussetze zu haben. muss man mal mehr testen
+
 * editing objects
 when editing objects that already are in udk, we must cut those objects from udk, edit parameters and paste them back. 
 this has several disadvantages: it is slow, we always must wait for copy and paste commands to finish execution (and we currently don't know how te be sure that a command was executed, we just wait a certain ammount of time) and the worst of all maybe: 
@@ -67,3 +105,5 @@ this has several disadvantages: it is slow, we always must wait for copy and pas
 if an object is somehow referenced by it's name in udk, which is not so uncommon anymore (good old time where one used the tag instead of the name, haha)
 if you edit an object in udk or it's name is changed, udk changes the references. but if we cut the object, udk might kill the connection (stuff like kismet). If those links keep the name, after inserting the object, the connection would be there again, but if not, well, this might be an important case to tell the user to not edit objects that are referenced in kismet or so with this tool. 
 there is nothing we could do to prevent this from happening aside from using a different unsafe technique of transforming objects through key and mouse inputs into the viewport :D
+
+

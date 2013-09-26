@@ -2,11 +2,13 @@
 
 import udkUI
 import udkTranslator
-import udkCommand
+#import udkCommand
 
 #might simply use from udkCommand import * here but that would make things visible which should not be visible here ;)
-from udkCommand import transformObject
-from udkCommand import setCamera
+#from udkCommand import transformObject
+#from udkCommand import setCamera
+
+from udkCommand import *
 
 def connectToInstance():
     """

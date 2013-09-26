@@ -6,6 +6,8 @@ import os
 import glob 
 import time
 
+import threading
+
 #from udkUIHelper import getIFileSaveDialogFromHwnd
 
 # UI element window handles
@@ -56,6 +58,8 @@ EnumThreadWindows = ctypes.windll.user32.EnumThreadWindows
 GetDlgItemText = ctypes.windll.user32.GetDlgItemTextW
 GetDlgItem = ctypes.windll.user32.GetDlgItem
 GetNextDlgTabItem = ctypes.windll.user32.GetNextDlgTabItem
+
+AttachThreadInput = ctypes.windll.user32.AttachThreadInput
 
 class RECT(ctypes.Structure):
  _fields_ = [
@@ -183,7 +187,17 @@ def getChildWindowByEnumPos(hwnd, pos):
     param = ThreadWinLParm(name = None, cls = None, enumPos = pos, _enum = -1)
     EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByEnumPos), ctypes.byref(param))
     return param.hwnd
-    
+
+
+def attachThreads(hwnd):
+    """
+    this will tell windows to attach the program and the udk threads
+    this will give us some benefits in control, for example SendMessage calls to the udk thread will only return when udk has processed the message, amazing!
+    """
+    thread = GetWindowThreadProcessId(hwnd, 0) #udk thread
+    thisThread = threading.current_thread().ident #program thread
+    print "attaching threads",thread,"and",thisThread
+    AttachThreadInput(thread, thisThread, True)
     
 def _getWindows(hwnd, lParam):
     """
@@ -194,11 +208,15 @@ def _getWindows(hwnd, lParam):
         length = GetWindowTextLength(hwnd)
         buff = ctypes.create_unicode_buffer(length + 1)
         GetWindowText(hwnd, buff, length + 1)
+        #if "Maya" in buff.value:
+        #    thread = GetWindowThreadProcessId(hwnd, 0)
+        #    print "maya thread:",thread
         if "Unreal Development Kit" in buff.value:
             print "found UDK"
             global gMainWindow
             gMainWindow = hwnd
             
+            attachThreads(gMainWindow)
             # get the command line field
             global gCommandField
             child = 0
@@ -226,8 +244,9 @@ def fireCommand(command):
     """
     global gCommandField
     SendMessage(gCommandField, WM_SETTEXT, 0, str(command) )
-    PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)
-    #SendMessage(gCommandField, WM_CHAR, VK_RETURN, 0)
+    #PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)
+    #time.sleep(0.1) #TODO fix this maybe?
+    SendMessage(gCommandField, WM_CHAR, VK_RETURN, 0)
     #PostMessage(gCommandField, WM_KEYDOWN, VK_RETURN, 0)
     # VK_RETURN with WM_KEYDOWN didn't work from within maya, use WM_CHAR instead...
 
