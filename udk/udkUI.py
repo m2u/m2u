@@ -15,6 +15,13 @@ gCommandField = None # the udk command line text field
 gMainWindow = None # the udk window
 gMenuExportID = None # export selected menu entry
 
+gMenuCutID = None # edit-cut menu entry
+gMenuCopyID = None # edit-copy menu entry
+gMenuPasteID = None # edit-paste menu entry
+gMenuDuplicateID = None # edit-duplicate menu entry
+gMenuDeleteID = None # edit-delete menu entry
+gMenuSelectNoneID = None # edit-selectNone menu entry
+
 # windows functions and constants
 EnumWindows = ctypes.windll.user32.EnumWindows
 EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
@@ -227,15 +234,29 @@ def _getWindows(hwnd, lParam):
             #get menus
             global gMenuExportID
             hMenu = GetMenu(gMainWindow)
-            hFileMenu = GetSubMenu(hMenu,0)
-            hExportMenu = GetSubMenu(hFileMenu, 13)
-            gMenuExportID = GetMenuItemID(hExportMenu, 1)
+            hFileMenu = GetSubMenu(hMenu,0) #File
+            hExportMenu = GetSubMenu(hFileMenu, 13) #Export
+            gMenuExportID = GetMenuItemID(hExportMenu, 1) #Selected Only
+            
+            global gMenuCutID, gMenuCopyID, gMenuPasteID
+            global gMenuDuplicateID, gMenuDeleteID, gMenuSelectNoneID
+            hEditMenu = GetSubMenu(hMenu,1) #Edit
+            gMenuCutID = GetMenuItemID(hEditMenu, 7) #Cut
+            gMenuCopyID = GetMenuItemID(hEditMenu, 8) #Copy
+            gMenuPasteID = GetMenuItemID(hEditMenu, 9) #Paste
+            gMenuDuplicateID = GetMenuItemID(hEditMenu, 10) #Duplicate
+            gMenuDeleteID = GetMenuItemID(hEditMenu, 11) #Delete
+            gMenuSelectNoneID = GetMenuItemID(hEditMenu, 13)
             
             return False # we found udk, no further iteration required
     return True
 
 def connectToUEd():
+    global gMainWindow
     EnumWindows(EnumWindowsProc(_getWindows), 0)
+    if gMainWindow is None:
+        print "# m2u: No UDK instance found."
+    return (gMainWindow is not None)
 
 
 def fireCommand(command):
@@ -337,3 +358,36 @@ def listAllChildren(hwnd):
 #connectToUEd()
 #callExportSelected("Z:/Documents",1)
 #listAllChildren(gMainWindow)
+
+
+def callEditCut():
+    global gMainWindow
+    global gMenuCutID
+    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0),0)
+
+def callEditCopy():
+    global gMainWindow
+    global gMenuCopyID
+    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0),0)
+
+def callEditPaste():
+    global gMainWindow
+    global gMenuPasteID
+    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),0)
+
+def callEditDuplicate():
+    global gMainWindow
+    global gMenuDuplicateID
+    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuDuplicateID,0),0)
+
+def callEditDelete():
+    global gMainWindow
+    global gMenuDeleteID
+    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuDeleteID,0),0)
+
+def callSelectNone():
+    global gMainWindow
+    global gMenuSelectNoneID
+    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuSelectNoneID,0),0)
+
+

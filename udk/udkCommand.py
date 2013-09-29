@@ -4,10 +4,7 @@ import udkUI
 import pyperclip
 import re
 import time
-"""
-DELETE - Deletes the selected actors. # 
-DUPLICATE - Duplicates the selected actors. 
-"""
+
 #see http://udn.epicgames.com/Three/EditorConsoleCommands.html
 
 #-- helper functions --
@@ -41,16 +38,18 @@ def setCamera(x,y,z,rx,ry,rz):
 #ACTOR
 #    SELECT NAME= - Select the actor with the given name.
 def deselectAll():
-    command = "SELECT NONE"
-    udkUI.fireCommand(command)
+    #command = "SELECT NONE"
+    #udkUI.fireCommand(command)
+    udkUI.callSelectNone() #uses the menu instead of command field
 
-def selectByNames(names):
+def selectByNames(namesList):
     #actor select adds to selection
-    for name in names:
+    for name in namesList:
         command = "ACTOR SELECT NAME="+name
         udkUI.fireCommand(command)
 
-def selectByName(name):
+def selectByName(name): 
+    #select by name deselects everything else!
     command = "SELECT SELECTNAME NAME="+name
     udkUI.fireCommand(command)
 
@@ -58,7 +57,7 @@ def selectByName(name):
 #TRANSACTION - Undo and redo commands 
 #    REDO - Performs the last undone operation. 
 #    UNDO - Undoes the last performed operation.
-# !! not sure if we should use that... !!
+# !! not sure if we should use that, it could cause desyncs !!
 def redo():
     command = "TRANSACTON REDO"
     udkUI.fireCommand(command)
@@ -67,6 +66,14 @@ def undo():
     command = "TRANSACTION UNDO"
     udkUI.fireCommand(command)
 
+#DELETE - Deletes the selected actors. 
+#DUPLICATE - Duplicates the selected actors. 
+def delete():
+    udkUI.callEditDelete() #uses the menu instead of command field
+    
+def duplicate():
+    udkUI.callEditDuplicate() #uses the menu instead of command field
+    
 #EDIT - General editing commands 
 #    COPY - Copy the selection to the clipboard. 
 #    CUT - Cut the selection to the clipboard. 
@@ -74,16 +81,19 @@ def undo():
 #        HERE - Pastes the clipboard contents to the mouse location. 
 #        ORIGIN - Pastes the clipboard contents to the world origin.
 def copyToClipboard():
-    command = "EDIT COPY"
-    udkUI.fireCommand(command)
+    #command = "EDIT COPY"
+    #udkUI.fireCommand(command)
+    udkUI.callEditCopy() #uses the menu instead of command field
 
 def cutToClipboard():
-    command = "EDIT CUT"
-    udkUI.fireCommand(command)
+    #command = "EDIT CUT"
+    #udkUI.fireCommand(command)
+    udkUI.callEditCut() #uses the menu instead of command field
 
 def pasteFromClipboard():
-    command = "EDIT PASTE" #no TO= preserves positions
-    udkUI.fireCommand(command)
+    #command = "EDIT PASTE" #no TO= preserves positions
+    #udkUI.fireCommand(command)
+    udkUI.callEditPaste() #uses the menu instead of command field
 
 #OBJ - General object commands 
 #    EXPORT [PACKAGE=package] [TYPE=type] [FILE=file] [NAME=name] - Export the object of the given type with the given name to the specified file. 
@@ -131,7 +141,7 @@ def transformObject(objName, trans, rot, scale):
         return
     # we assume that transformation order is alwasy location, rotation, scale!
     locInd = str.find(old,"Location=(")
-    assert locInd is not -1, "m2u: No Location attribute found, there is currently no solution implemented for that case." # TODO we don't know where to add it in that case, so leave it be for now
+    assert locInd is not -1, "# m2u: No Location attribute found, there is currently no solution implemented for that case." # TODO we don't know where to add it in that case, so leave it be for now
     lastInd = locInd #index of the last translate information found
     nextInd = str.find(old,"Rotation=(",locInd)
     if nextInd is not -1: #found rotation as next, save the index

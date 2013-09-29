@@ -6,7 +6,7 @@ import pymel.core as pm
 import pymel.api as mapi
 import time
 
-RADIAN_TO_DEGR = 57.2957795
+RADIAN_TO_DEGR = 57.2957795     
 DEGR_TO_RADIAN = 0.0174532925
 
 #note: using the following two functions in script jobs would require the full
@@ -24,26 +24,68 @@ def rotationMayaToUDK(r):
 
 def translationMayaToUDK(t):
     tx,ty,tz = t
-    tn = (-tz,tx,ty)
-    return tn
+    return -tz,tx,ty #maya y-up
+    #return tx,-ty,tz #maya z-up
 
-def toggleSync( sync ):
-    """
-    activate or deactivate connection to UDK
-    """
+__bCameraSync = False
+def setCameraSyncing( sync ):
+    global __bCameraSync
+    __bCameraSync = sync
     if sync:
-        m2u.core.getEditor().connectToInstance() # find ued
         createCameraTracker()
-        
     else:
         deleteCameraTracker()
 
+def isCameraSyncing():
+    global __bCameraSync
+    return __bCameraSync
+
+__bObjectSync = False
+def setObjectSyncing( sync ):
+    global __bObjectSync
+    __bObjectSync = sync
+    if sync:
+        createObjectTracker()
+    else:
+        deleteObjectTracker()
+
+def isObjectSyncing():
+    global __bObjectSync
+    return __bObjectSync
+
+#def toggleSync( sync ):
+#    """
+#    activate or deactivate connection to UDK
+    # """
+    # if sync:
+    #     m2u.core.getEditor().connectToInstance() # find ued
+    #     createCameraTracker()
+        
+    # else:
+    #     deleteCameraTracker()
+
 
 def setCameraFOV( degrees ):
-    import pymel.core as pm
     cam = pm.nodetypes.Camera('perspShape',query=True)
     cam.setHorizontalFieldOfView(degrees)
 
+def setupCamera():
+    cam = pm.nodetypes.Camera('perspShape',query=True)
+    cam.setFarClipPlane(65536.0)
+    cam.setNearClipPlane(10.0)
+    setCameraFOV(90.0)
+    cam = pm.nodetypes.Camera('topShape',query=True)
+    cam.setFarClipPlane(100000.0)
+    cam.setNearClipPlane(10.0)
+    pm.setAttr('top.ty',50000.0)
+    cam = pm.nodetypes.Camera('frontShape',query=True)
+    cam.setFarClipPlane(100000.0)
+    cam.setNearClipPlane(10.0)
+    pm.setAttr('front.tz',50000.0)
+    cam = pm.nodetypes.Camera('sideShape',query=True)
+    cam.setFarClipPlane(100000.0)
+    cam.setNearClipPlane(10.0)
+    pm.setAttr('side.tx',50000.0)
 
 _cameraScriptJob = None
 def _onPerspChangedSJ():
@@ -86,13 +128,14 @@ all object script jobs will be removed when the selection changed before new SJs
 _onSelectionChangedCBid = None
 
 def createObjectTracker():
-    global _selectionChangedCB
+    global _onSelectionChangedCBid
     _onSelectionChangedCBid = mapi.MEventMessage.addEventCallback("SelectionChanged", _onSelectionChangedCB)
 
 def deleteObjectTracker():
-    if _onSelectionChangedCB is not None:
+    global _onSelectionChangedCBid
+    if _onSelectionChangedCBid is not None:
         _deleteObjectSJs()
-        mapi.MMessage.deleteCallback(_onSelectionChangedCB)
+        mapi.MEventMessage.removeCallback(_onSelectionChangedCBid)
 
 #had to remove the _ prefix or it won't be visible for the script job binding
 def onObjectChangedSJ(obj):

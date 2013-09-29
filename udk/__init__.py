@@ -14,7 +14,7 @@ def connectToInstance():
     """
     find the instance of the editor and establish the required connections
     """
-    udkUI.connectToUEd()
+    return udkUI.connectToUEd()
 
 #def setCamera(x,y,z,rx,ry,rz):
 #    """

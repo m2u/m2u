@@ -5,5 +5,5 @@
 from mayaCommand import *
 
 
-def getProgName():
+def getName():
     return "maya"

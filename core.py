@@ -39,7 +39,7 @@ def initProgram(programName):
         import max
         __program = max
     else:
-        print("undefined program")
+        print("# m2u: undefined program")
 
 def initEditor(editorName):
     global __editor

@@ -108,9 +108,35 @@ there is nothing we could do to prevent this from happening aside from using a d
 
 
 
+* Known Problems
+** selection is lost after transforming objects
+this is happening because every object is pasted individually, only the last pasted object will be selected in UEd. A reselection is possible but is not very important, we think, so it's a low priority. (yes, pasting all transformed objects at once is possible too and is a future development target)
+
+** a Save To Clip Pad dialog from UDK pops up (and locks the editor) when transforming objects
+this happens when holding the shift-key, since shift-copy calls this clip pad functionality from UDK. I never before knew that even existed ;) 
+A fix for this should be achievable by telling windows to disable all modifier keys while sending commands to UDK. It is a medium to high priority target since transforming objects with shift+mmb is very common in maya ;)
 
 * TODO:
-** reestablish correct selection after transforming
+** TODO reestablish correct selection after transforming 
 die udk objekte wurden ja gelöscht und einzeln wieder eingefügt, weswegen das letzte objekt zwar selektiert ist, aber eben nicht alle. nach einem transform command sollte die aktuelle selection erneut zugewiesen werden.
 das problem hierbei ist, dass die transformation aus den script jobs der einzelnen objekte heraus ausgeführt wird. man könnte zwar am ende vom script job eine funktion aufrufen, die wieder alles selektiert, das wäre aber dann bei jedem objekt der fall, werden 10 objekte bewegt, wird 10 mal die selektion restored und danach wieder gekillt.
-man müsste hierfür herausfinden wann das letzte objekt geupdated wurde...
+man müsste hierfür herausfinden wann das letzte objekt geupdated wurde:
+immer wenn die SJs erstellt werden, die variable "lastObject" oder so mit dem zugehörigen objekt setzen, dann kann jeder script job abfragen, ob das eigene objekt das "lastObject" ist. ist dem so, wird vom SJ die function zum reestablishen der selection aufgerufen.
+
+** TODO switchen zwischen y-up und z-up in maya
+evtl. kann man das auch automatisch detekten, jedenfalls müssen entsprechend wieder achsen vertauscht werden. das normal aus udk exportierte fbx ist auf z-up ausgelegt, und maya ist auch nicht in der lage das beim import vernünftig umzuwandeln.
+solange also kein von unserem script durchgeführtes einzel-import vorhanden ist, dürfte es einfacher sein in z-up zu demonstrieren.
+udk zu maya scheint aber genrell um 90 grad um die up-axis gedreht zu sein, in y und z up. alle aus dem udk exportierten meshes wären daher um 90 grad falsch gedreht. dem ist zumindest so, wenn man darauf wert legt, dass die top, side und front ansichten in maya und udk das gleiche zeigen (die axen sind ja eh verschieden ausgerichtet) 
+da müsste man nochmal testen wie aus maya exportierte meshes ins udk importiert werden. evtl. muss man sich damit anfreunden, dass die views in maya und udk eine um 90 grad gedrehte welt zeigen (oder man muss 2 achsen vertauschen und alle rotationen mit 90 grad auf y aufschlagen übertragen) evtl. nochmal nachprüfen wie das mit den in fbx exportierten cameras bei arrival war.
+
+x-achse bleibt x-achse und y wird mit -z getauscht, deswegen ist das resultat um 90 grad um die y-achse gedreht
+um nur visuelle gleichheit zu erhalten könnte man evlt. auch mayas viewport cameras drehen? evtl. als option halten und die community fragen was so die meinungen dazu sind
+
+** TODO evtl. angleichen der seiten-ansichten
+man könnte auch die seiten-ansichten syncen, in udk kann zwar immer nur auf eine sicht gesynct werden, aber evlt. könnte man in maya feststellen, welche cam aktiv ist und diese dann syncen, ist aber wirklich nicht wichtig, denke ich.
+
+** TODO fix save to clip pad with modifier keys problem
+siehe oben (udk save to clip pad)
+
+** TODO mehrere objekte mit einem mal kopieren und wieder einfügen
+es sollte schneller gehen, einen langen text zu dekonstruieren und insbesondere einen langen text einzufügen als z.b. hundert objekte einzeln. Der Aufwand den Text auseinanderzunehmen dürfte ab einer bereits geringen Zahl an objekten weit unter dem zeitaufwand der Message-kommunikation stehen.

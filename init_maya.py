@@ -6,6 +6,12 @@ import m2u
 
 m2u.core.initialize("maya")
 
-# create UI here, send the initialized m2u module to the ui
+# create UI here, send the initialized m2u module to the ui if necessary (max)
+# in maya it should be in the maya namespace ?
 
 #createUI(m2u)
+
+#TODO check if pyQt is installed, if not, use the simple internal maya UI
+
+from m2u.maya import mayaInternalUI
+mayaInternalUI.createUI()
