@@ -36,12 +36,20 @@ GetWindow = ctypes.windll.user32.GetWindow
 GW_ENABLEDPOPUP = 6
 GW_CHILD = 5
 
+GetFocus = ctypes.windll.user32.GetFocus
+SetFocus = ctypes.windll.user32.SetFocus
+
 PostMessage = ctypes.windll.user32.PostMessageA
 SendMessage = ctypes.windll.user32.SendMessageA
 WM_SETTEXT = 0x000C
 WM_KEYDOWN = 0x0100
 VK_RETURN  = 0x0D
 WM_CHAR = 0x0102
+VK_F = 0x46
+VK_SELECT = 0x29
+VK_ESCAPE = 0x1B
+IDOK = 1
+IDCANCEL = 2
 
 # menu stuff
 GetMenuItemID = ctypes.windll.user32.GetMenuItemID
@@ -276,10 +284,11 @@ def callExportSelected(filePath, withTextures):
     calls the menu entry for export selected
     enters the file path and answers the popup dialogs
     """
-    global gMainWindow
-    global gMenuExportID
+    #global gMainWindow
+    #global gMenuExportID
 
-    #PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
+    PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
+    time.sleep(0.1)
     # SendMessage blocks execution, because it only returns when the modal gets closed
     # PostMessage returns before the modal is opened
     # so we will Post, and ask the thread so long for the export window, until it is there. that might not be the best way, but i really have no other idea anymore, on how to get to the modal dialog 
@@ -301,6 +310,7 @@ def callExportSelected(filePath, withTextures):
     #and again, since i found no other way to somehow wait till all child elements of the dialog are created, we have to ask so long, until we finally find the element we want
     """
     
+    ctypes.windll.user32.SetFocus(hDlg)
     null_ptr = ctypes.POINTER(ctypes.c_int)()
     param = ThreadWinLParm(hwnd = null_ptr, name=None, cls="Edit")
     while not bool(param.hwnd): # while NULL
@@ -309,22 +319,53 @@ def callExportSelected(filePath, withTextures):
     print "found edit field"
     edit = param.hwnd
     print "edit: "+ str(ctypes.addressof(edit))
-    #SendMessage(edit, WM_SETTEXT, 0, str(filePath))
+    SendMessage(edit, WM_SETTEXT, 0, str(filePath))
     #dlg = getIFileSaveDialogFromHwnd(hDlg)
+
+#    param = ThreadWinLParm(hwnd = null_ptr, name=None, cls="ListBox")
+#    EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByName),ctypes.byref(param))
+#    listbox = param.hwnd
+#    print "ListBox: "+ str(ctypes.addressof(listbox))
+#    SendMessage(listbox, WM_KEYDOWN, VK_F,0)
+    #focushwnd = GetFocus()
+    #print "focus =",focushwnd
+    #SendMessage(focushwnd, WM_SETTEXT,0,str("focused"))
+
+    #SendMessage(hDlg, WM_SETTEXT,0, str("testidi"))
+    #return
+
+    
 
     #listAllChildren(hDlg)
     #time.sleep(0.1)
-    address = GetNextDlgTabItem(hDlg, edit, False) #1
-    address = GetNextDlgTabItem(hDlg, address, False) #2
-    address = GetNextDlgTabItem(hDlg, address, False) #3
-    address = GetNextDlgTabItem(hDlg, address, False) #4
-    address = GetNextDlgTabItem(hDlg, address, False) #5
+    address = GetNextDlgTabItem(hDlg, edit, False) #1 filetype combo box
+    SendMessage(address, WM_CHAR, VK_F, 0) # send "F" to set to FBX
+    
+    # now positively answer the dialog (press the save-button)
+    #SetFocus(edit)
+    #PostMessage(edit, WM_CHAR, VK_RETURN, 0) # not working
+    #SendMessage(edit, WM_KEYDOWN, VK_RETURN, 0) # not working
+    SetFocus(hDlg)
+    #SendMessage(hDlg, WM_KEYDOWN, VK_ESCAPE, 0) # not working
+    #SendMessage(hDlg, WM_CHAR, VK_ESCAPE, 0) #not working
+    #PostMessage(hDlg, WM_KEYDOWN, VK_ESCAPE, 0) # working
+    #PostMessage(hDlg, WM_CHAR, VK_ESCAPE, 0) # not tested
+    SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDOK,0),0) # working
+
+    # tried to get the address line because initially it didn't work to set the full path in the filename-field, but for some reason it works now...
+    #GetDlgItem(hDlg,1)
+    #address = GetNextDlgTabItem(hDlg, address, False) #2 "show folders" thingie
+    #address = GetNextDlgTabItem(hDlg, address, False) #3 Save button
+    #SetFocus(address)
+    #SendMessage(address, WM_KEYDOWN, VK_RETURN, 0) # press the save button
+    #address = GetNextDlgTabItem(hDlg, address, False) #4 Cancel button
+    #address = GetNextDlgTabItem(hDlg, address, False) #5 Address bar
     #address = GetNextDlgTabItem(hDlg, address, False) #6
-    print "address: " + str(address)
-    #PostMessage(address, WM_KEYDOWN, VK_RETURN, 0)
-#    listAllChildren(hDlg)
+    #print "address: " + str(address)
+    #SendMessage(address, WM_CHAR, VK_SELECT, 0)
+
+    #listAllChildren(hDlg)
     #SendMessage(address, WM_SETTEXT, 0, str(filePath))
-    #ctypes.windll.user32.SetFocus(hDlg)
     #print "sent enter to address"
     """
     null_ptr = ctypes.POINTER(ctypes.c_int)()
@@ -361,33 +402,21 @@ def listAllChildren(hwnd):
 
 
 def callEditCut():
-    global gMainWindow
-    global gMenuCutID
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0),0)
 
 def callEditCopy():
-    global gMainWindow
-    global gMenuCopyID
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0),0)
 
 def callEditPaste():
-    global gMainWindow
-    global gMenuPasteID
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),0)
 
 def callEditDuplicate():
-    global gMainWindow
-    global gMenuDuplicateID
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuDuplicateID,0),0)
 
 def callEditDelete():
-    global gMainWindow
-    global gMenuDeleteID
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuDeleteID,0),0)
 
 def callSelectNone():
-    global gMainWindow
-    global gMenuSelectNoneID
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuSelectNoneID,0),0)
 
 

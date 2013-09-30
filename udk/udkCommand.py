@@ -68,10 +68,10 @@ def undo():
 
 #DELETE - Deletes the selected actors. 
 #DUPLICATE - Duplicates the selected actors. 
-def delete():
+def deleteSelected():
     udkUI.callEditDelete() #uses the menu instead of command field
     
-def duplicate():
+def duplicateSelected():
     udkUI.callEditDuplicate() #uses the menu instead of command field
     
 #EDIT - General editing commands 

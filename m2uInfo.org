@@ -116,6 +116,9 @@ this is happening because every object is pasted individually, only the last pas
 this happens when holding the shift-key, since shift-copy calls this clip pad functionality from UDK. I never before knew that even existed ;) 
 A fix for this should be achievable by telling windows to disable all modifier keys while sending commands to UDK. It is a medium to high priority target since transforming objects with shift+mmb is very common in maya ;)
 
+** no Location attribute found
+if you get this error message, you are trying to transform an object that resides in the absolute center of the world in UDK. In that case, there is not Location statement in the ascii-representation. Our script currently uses this as the anchor for replacing the transform information. This is fixable but requires some string-decomposition code work, since objects at zero-position are extremely rare in actual use-cases, we think this is a minor problem with a low priority. Please tell us if you think otherwise ;)
+
 * TODO:
 ** TODO reestablish correct selection after transforming 
 die udk objekte wurden ja gelöscht und einzeln wieder eingefügt, weswegen das letzte objekt zwar selektiert ist, aber eben nicht alle. nach einem transform command sollte die aktuelle selection erneut zugewiesen werden.
