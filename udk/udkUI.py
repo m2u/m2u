@@ -288,7 +288,7 @@ def callExportSelected(filePath, withTextures):
     #global gMenuExportID
 
     PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
-    time.sleep(0.1)
+    time.sleep(0.1) #TODO fix this maybe, we wait a little so all dlg elements are there before we try to access them.
     # SendMessage blocks execution, because it only returns when the modal gets closed
     # PostMessage returns before the modal is opened
     # so we will Post, and ask the thread so long for the export window, until it is there. that might not be the best way, but i really have no other idea anymore, on how to get to the modal dialog 
@@ -339,6 +339,7 @@ def callExportSelected(filePath, withTextures):
     #listAllChildren(hDlg)
     #time.sleep(0.1)
     address = GetNextDlgTabItem(hDlg, edit, False) #1 filetype combo box
+    SetFocus(address)
     SendMessage(address, WM_CHAR, VK_F, 0) # send "F" to set to FBX
     
     # now positively answer the dialog (press the save-button)

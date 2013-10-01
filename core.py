@@ -4,6 +4,12 @@
 
 # this is the core of m2u the only and first module to be imported and initialize called from the program specific startup scripts
 
+import os
+
+#this function may be changed to return a user-defined folder
+def getTempFolder():
+    return os.getenv("TEMP")
+
 __program = None
 __editor = None
 

@@ -5,6 +5,7 @@ import pymel.core as pm
 #import maya.OpenMaya as mapi
 import pymel.api as mapi
 import time
+import os
 
 RADIAN_TO_DEGR = 57.2957795     
 DEGR_TO_RADIAN = 0.0174532925
@@ -37,7 +38,7 @@ def setCameraSyncing( sync ):
         deleteCameraTracker()
 
 def isCameraSyncing():
-    global __bCameraSync
+    #global __bCameraSync
     return __bCameraSync
 
 __bObjectSync = False
@@ -50,7 +51,7 @@ def setObjectSyncing( sync ):
         deleteObjectTracker()
 
 def isObjectSyncing():
-    global __bObjectSync
+    #global __bObjectSync
     return __bObjectSync
 
 #def toggleSync( sync ):
@@ -98,16 +99,25 @@ def _onPerspChangedSJ():
     #rz = pm.getAttr(obj+'.rz')
     tx,ty,tz = pm.xform(obj,query=True, ws=True, t=True)
     #tn = translationMayaToUDK((tx,ty,tz)) #script job namespace problem
-    tx,ty,tz = (-tz,tx,ty)
+    #tx,ty,tz = (-tz,tx,ty) # y-up
+    #tx,ty,tz = (ty,tx,tz) # z-up (same as max)
+    tx,ty,tz = (tx,-ty,tz) # z-up as fbx from udk?
+    
     rx,ry,rz = pm.xform(obj,query=True, ws=True, ro=True)
     #rx,ry,rz = rotationMayaToUDK((rx,ry,rz))
-    global RADIAN_TO_DEGR
-    global DEGR_TO_RADIAN
-    mrot = mapi.MEulerRotation(rx*DEGR_TO_RADIAN,ry*DEGR_TO_RADIAN,rz*DEGR_TO_RADIAN)
-    newrot = mrot.reorder(mapi.MEulerRotation.kZXY)
-    rx,ry,rz = (newrot.x,newrot.y,newrot.z)
-    rx,ry,rz = (rx*RADIAN_TO_DEGR, ry*RADIAN_TO_DEGR, rz*RADIAN_TO_DEGR)
-    rx,ry,rz = (rx,-ry,-rz)
+    #global RADIAN_TO_DEGR
+    #global DEGR_TO_RADIAN
+    
+    # maya y-up    
+#    mrot = mapi.MEulerRotation(rx*DEGR_TO_RADIAN,ry*DEGR_TO_RADIAN,rz*DEGR_TO_RADIAN)
+#    newrot = mrot.reorder(mapi.MEulerRotation.kZXY)
+#    rx,ry,rz = (newrot.x,newrot.y,newrot.z)
+#    rx,ry,rz = (rx*RADIAN_TO_DEGR, ry*RADIAN_TO_DEGR, rz*RADIAN_TO_DEGR)
+#    rx,ry,rz = (rx,-ry,-rz) # y-up
+    
+    # maya z-up
+    #rx,ry,rz = (rx-90,-rz,ry) # z-up (same as max)
+    rx,ry,rz = (rx-90,-rz-90,ry) # z-up as fbx from udk?
     m2u.core.getEditor().setCamera(tx,ty,tz,rx,ry,rz)
 
 def createCameraTracker():
@@ -144,18 +154,30 @@ def onObjectChangedSJ(obj):
     #need to get down to the matrices
     tx,ty,tz = pm.xform(obj,query=True, ws=True, t=True)
     #tx,ty,tz = translationMayaToUDK(t)
-    tx,ty,tz = (-tz,tx,ty)
+    #tx,ty,tz = (-tz,tx,ty) # y-up
+    #tx,ty,tz = (ty,tx,tz) # z-up
+    tx,ty,tz = (tx,-ty,tz) # z-up as fbx from udk
+    
     rx,ry,rz = pm.xform(obj,query=True, ws=True, ro=True)
     #rx,ry,rz = rotationMayaToUDK(r) #script job namespace problem
-    global RADIAN_TO_DEGR
-    global DEGR_TO_RADIAN
-    mrot = mapi.MEulerRotation(rx*DEGR_TO_RADIAN,ry*DEGR_TO_RADIAN,rz*DEGR_TO_RADIAN)
-    newrot = mrot.reorder(mapi.MEulerRotation.kZXY)
-    rx,ry,rz = (newrot.x,newrot.y,newrot.z)
-    rx,ry,rz = (rx*RADIAN_TO_DEGR, ry*RADIAN_TO_DEGR, rz*RADIAN_TO_DEGR)
-    rx,ry,rz = (rx,-ry,-rz)
+    #global RADIAN_TO_DEGR
+    #global DEGR_TO_RADIAN
+
+    # maya y-up
+#    mrot = mapi.MEulerRotation(rx*DEGR_TO_RADIAN,ry*DEGR_TO_RADIAN,rz*DEGR_TO_RADIAN)
+#    newrot = mrot.reorder(mapi.MEulerRotation.kZXY)
+#    rx,ry,rz = (newrot.x,newrot.y,newrot.z)
+#    rx,ry,rz = (rx*RADIAN_TO_DEGR, ry*RADIAN_TO_DEGR, rz*RADIAN_TO_DEGR)
+#    rx,ry,rz = (rx,-ry,-rz)
+
+    # maya z-up
+    #rx,ry,rz = (rx,-rz,ry) # z-up (same as max)
+    rx,ry,rz = (-ry,-rz,rx) # z-up as fbx from udk
+    
     sx,sy,sz = pm.xform(obj,query=True, r=True, s=True)
-    sx,sy,sz = (sz,sx,sy)
+    #sx,sy,sz = (sz,sx,sy) # y-up
+    #sx,sy,sz = (sy,sx,sz) # z-up (as max)
+    sx,sy,sz = (sx,sy,sz) # z-up as fbx from udk
     m2u.core.getEditor().transformObject(obj,(tx,ty,tz),(rx,ry,rz),(sx,sy,sz))
 
 _objectScriptJobs = list()
@@ -202,3 +224,18 @@ oder SceneOpene: disconnect sync?
 alternativ MSceneMessage
 
 """
+
+def fetchSelectedObjectsFromEditor():
+    """ this function will tell UDK to export the selected objects into a temporary FBX file and then maya will import that file"""
+    path = os.getenv("TEMP")
+    path = path + "\m2uTempExport.fbx"
+    if os.path.exists(path):
+        os.remove(path) # make sure there will be no "overwrite" warning from UEd
+    m2u.core.getEditor().exportSelectedToFile(path,False)
+    while not os.path.exists(path):
+        time.sleep(0.01) # wait till file is being written
+        #print "waited a little"
+    time.sleep(0.1) # wait a little longer, hope file is finished written
+    #TODO: find some way to check if the file is still being written or not
+    cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
+    pm.mel.eval(cmd)

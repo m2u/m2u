@@ -109,6 +109,9 @@ there is nothing we could do to prevent this from happening aside from using a d
 
 
 * Known Problems
+** multiple UDKs running at once
+currently the first instance that is found is taken (most likely the first one started). We may provide some means of providing a list the user can select from in the future, but it is low priority.
+
 ** selection is lost after transforming objects
 this is happening because every object is pasted individually, only the last pasted object will be selected in UEd. A reselection is possible but is not very important, we think, so it's a low priority. (yes, pasting all transformed objects at once is possible too and is a future development target)
 

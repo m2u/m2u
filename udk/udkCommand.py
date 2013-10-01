@@ -109,13 +109,19 @@ def exportObjToFile(package, objName, objType, filePath):
               (package, objType, filePath, objName)
     udkUI.fireCommand(command)
 
-def exportMeshToFile(meshSig, folder, fileName, withTextures=True):
+def exportMeshToFile(meshSig, filePath, withTextures=True):
     """
-    exports a static mesh by placing it in the map and deleting it after export
+    exports a single static mesh by placing it in the map and deleting it after export
     it can export the materials textures as bmp
     meshSig is the fully qualified mesh name (package.groups.mesh)
     """
     udkUI.callExportSelected(folder, withTextures)
+
+def exportSelectedToFile(filePath, withTextures=True):
+    """
+    exports the current selection into a file
+    """
+    udkUI.callExportSelected(filePath, withTextures)
 
 def transformObject(objName, trans, rot, scale):
     """
