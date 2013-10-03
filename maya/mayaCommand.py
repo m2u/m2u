@@ -1,6 +1,7 @@
 # maya commands, will maybe divided into several files, we will see
 
 import m2u
+import m2u.helper as helper
 import pymel.core as pm
 #import maya.OpenMaya as mapi
 import pymel.api as mapi
@@ -129,6 +130,7 @@ def deleteCameraTracker():
     global _cameraScriptJob
     if  _cameraScriptJob is not None and pm.scriptJob( exists=_cameraScriptJob):
         pm.scriptJob( kill=_cameraScriptJob, force=True)
+        _cameraScriptJob = None
 
 """
 object tracking works by creating one callback for selection changed tracking
@@ -146,6 +148,7 @@ def deleteObjectTracker():
     if _onSelectionChangedCBid is not None:
         _deleteObjectSJs()
         mapi.MEventMessage.removeCallback(_onSelectionChangedCBid)
+        _onSelectionChangedCBid = None
 
 #had to remove the _ prefix or it won't be visible for the script job binding
 def onObjectChangedSJ(obj):
@@ -227,15 +230,22 @@ alternativ MSceneMessage
 
 def fetchSelectedObjectsFromEditor():
     """ this function will tell UDK to export the selected objects into a temporary FBX file and then maya will import that file"""
-    path = os.getenv("TEMP")
+    #path = os.getenv("TEMP")
+    path = m2u.core.getTempFolder()
     path = path + "\m2uTempExport.fbx"
     if os.path.exists(path):
         os.remove(path) # make sure there will be no "overwrite" warning from UEd
     m2u.core.getEditor().exportSelectedToFile(path,False)
-    while not os.path.exists(path):
-        time.sleep(0.01) # wait till file is being written
-        #print "waited a little"
-    time.sleep(0.1) # wait a little longer, hope file is finished written
+    #while not os.path.exists(path):
+    #    time.sleep(0.01) # wait till file is being written
+    #    #print "waited a little"
+    #time.sleep(0.1) # wait a little longer, hope file is finished written
     #TODO: find some way to check if the file is still being written or not
+    #print "# m2u: Importing file: "+path
+    status = helper.waitForFileToBecomeAvailable(path)
+    if not status:
+        pm.error("# m2u: Unable to import file: "+path)
+        return
+    
     cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
     pm.mel.eval(cmd)
