@@ -249,3 +249,7 @@ def fetchSelectedObjectsFromEditor():
     
     cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
     pm.mel.eval(cmd)
+
+
+def printWarning(s):
+    pm.warning(s)

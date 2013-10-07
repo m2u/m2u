@@ -14,15 +14,29 @@ def cbSetupCamera(*args):
 def cbSyncCamera(*args):
     m2u.core.getProgram().setCameraSyncing(True)
 
+def cbSyncCameraOff(*args):
+    m2u.core.getProgram().setCameraSyncing(False)
+
 def cbSyncObjects(*args):
     m2u.core.getProgram().setObjectSyncing(True)
 
+def cbSyncObjectsOff(*args):
+    m2u.core.getProgram().setObjectSyncing(False)
+
+def cbFetchSelected(*args):
+    m2u.core.getProgram().fetchSelectedObjectsFromEditor()
+
 def createUI():
-    m2uwin = pm.window( title="m2u maya", iconName='m2u', widthHeight=(100, 400) )
+    v = m2u.getVersion()
+    m2uwin = pm.window( title="m2u "+v+" (maya)", iconName='m2u', widthHeight=(150, 300) )
     pm.columnLayout()
+    pm.rowLayout(numberOfColumns = 2)
     pm.button( label='Connect', c=cbConnect )
     pm.button( label='Setup Cameras', c=cbSetupCamera )
-    pm.button( label='Sync Camera', c = cbSyncCamera)
-    pm.button( label='Sync Objects', c = cbSyncObjects)
+    pm.setParent('..')
+    pm.checkBox( label='Sync Camera', onc = cbSyncCamera, ofc = cbSyncCameraOff, v = False)
+    pm.checkBox( label='Sync Objects', onc = cbSyncObjects, ofc = cbSyncObjectsOff, v = False)
+    pm.separator()
+    pm.button( label='Fetch Selected', c = cbFetchSelected)
     pm.setParent( '..' )
     pm.showWindow( m2uwin )

@@ -1,4 +1,5 @@
 # keeps all the required UI elements of the UEd and talks to them
+# this file should be divided into several as it is getting untidy ;)
 
 import ctypes #required for windows ui stuff
 
@@ -7,6 +8,7 @@ import glob
 import time
 
 import threading
+import m2u
 
 #from udkUIHelper import getIFileSaveDialogFromHwnd
 
@@ -23,6 +25,7 @@ gMenuDeleteID = None # edit-delete menu entry
 gMenuSelectNoneID = None # edit-selectNone menu entry
 
 # windows functions and constants
+# stuff for finding and analyzing UI Elements
 EnumWindows = ctypes.windll.user32.EnumWindows
 EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 EnumChildWindows = ctypes.windll.user32.EnumChildWindows
@@ -36,20 +39,26 @@ GetWindow = ctypes.windll.user32.GetWindow
 GW_ENABLEDPOPUP = 6
 GW_CHILD = 5
 
+# stuff for interacting with UI Elements
 GetFocus = ctypes.windll.user32.GetFocus
 SetFocus = ctypes.windll.user32.SetFocus
 
 PostMessage = ctypes.windll.user32.PostMessageA
 SendMessage = ctypes.windll.user32.SendMessageA
+SendMessageTimeout = ctypes.windll.user32.SendMessageTimeoutA
 WM_SETTEXT = 0x000C
 WM_KEYDOWN = 0x0100
-VK_RETURN  = 0x0D
-WM_CHAR = 0x0102
-VK_F = 0x46
+WM_KEYUP = 0x0101
+WM_CHAR = 0x0102 # the alternative to WM_KEYDOWN
+VK_RETURN  = 0x0D # Enter key
+VK_F = 0x46 # the F-key (used for export dialog: fbx)
 VK_SELECT = 0x29
 VK_ESCAPE = 0x1B
-IDOK = 1
-IDCANCEL = 2
+VK_SHIFT = 0x10
+#VK_SHIFT = 0xA0 # LSHIFT
+
+IDOK = 1 # used for dialogs
+IDCANCEL = 2 # used for dialogs
 
 # menu stuff
 GetMenuItemID = ctypes.windll.user32.GetMenuItemID
@@ -74,6 +83,7 @@ GetDlgItemText = ctypes.windll.user32.GetDlgItemTextW
 GetDlgItem = ctypes.windll.user32.GetDlgItem
 GetNextDlgTabItem = ctypes.windll.user32.GetNextDlgTabItem
 
+# attaching is required for SendMessage and the like to actually work like it should
 AttachThreadInput = ctypes.windll.user32.AttachThreadInput
 
 class RECT(ctypes.Structure):
@@ -172,7 +182,7 @@ def _getChildWindowByName(hwnd, lParam):
         if buff.value == param.name and param.cls in cbuff.value:# == param.cls:
             param.hwnd = hwnd
             return False
-    else: #bot values are None, print the current element
+    else: #both values are None, print the current element
         print "wnd cls: "+cbuff.value+" name: "+buff.value+" enum: "+str(param._enum)
     return True
 
@@ -203,7 +213,7 @@ def getChildWindowByEnumPos(hwnd, pos):
     EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByEnumPos), ctypes.byref(param))
     return param.hwnd
 
-
+    
 def attachThreads(hwnd):
     """
     this will tell windows to attach the program and the udk threads
@@ -281,14 +291,14 @@ def fireCommand(command):
 
 def callExportSelected(filePath, withTextures):
     """
-    calls the menu entry for export selected
+    calls the menu entry for export selected,
     enters the file path and answers the popup dialogs
     """
     #global gMainWindow
     #global gMenuExportID
 
     PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
-    time.sleep(0.1) #TODO fix this maybe, we wait a little so all dlg elements are there before we try to access them.
+    time.sleep(0.1) #HACK (fix this maybe): we wait a little so all dlg elements are there before we try to access them.
     # SendMessage blocks execution, because it only returns when the modal gets closed
     # PostMessage returns before the modal is opened
     # so we will Post, and ask the thread so long for the export window, until it is there. that might not be the best way, but i really have no other idea anymore, on how to get to the modal dialog 
@@ -301,24 +311,22 @@ def callExportSelected(filePath, withTextures):
         #print "hwnd = "+ str(param.hwnd)
         EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), ctypes.byref(param))
     hDlg = param.hwnd
-    print "FUUUUU"
+    #print "FUUUUU"
     
-    """
-    #b = ctypes.windll.user32.RedrawWindow(hDlg,0,0,0)
-    #b = ctypes.windll.user32.UpdateWindow(hDlg)
-    #time.sleep(0.01)
-    #and again, since i found no other way to somehow wait till all child elements of the dialog are created, we have to ask so long, until we finally find the element we want
-    """
+    # #b = ctypes.windll.user32.RedrawWindow(hDlg,0,0,0)
+    # #b = ctypes.windll.user32.UpdateWindow(hDlg)
+    # #time.sleep(0.01)
+    # #and again, since i found no other way to somehow wait till all child elements of the dialog are created, we have to ask so long, until we finally find the element we want
     
     ctypes.windll.user32.SetFocus(hDlg)
     null_ptr = ctypes.POINTER(ctypes.c_int)()
     param = ThreadWinLParm(hwnd = null_ptr, name=None, cls="Edit")
     while not bool(param.hwnd): # while NULL
-        print "child = "+ str(param.hwnd)
+        #print "child = "+ str(param.hwnd)
         EnumChildWindows(hDlg, EnumWindowsProc(_getChildWindowByName), ctypes.byref(param))
-    print "found edit field"
+    #print "found edit field"
     edit = param.hwnd
-    print "edit: "+ str(ctypes.addressof(edit))
+    #print "edit: "+ str(ctypes.addressof(edit))
     SendMessage(edit, WM_SETTEXT, 0, str(filePath))
     #dlg = getIFileSaveDialogFromHwnd(hDlg)
 
@@ -333,9 +341,7 @@ def callExportSelected(filePath, withTextures):
 
     #SendMessage(hDlg, WM_SETTEXT,0, str("testidi"))
     #return
-
     
-
     #listAllChildren(hDlg)
     #time.sleep(0.1)
     address = GetNextDlgTabItem(hDlg, edit, False) #1 filetype combo box
@@ -401,15 +407,114 @@ def listAllChildren(hwnd):
 #callExportSelected("Z:/Documents",1)
 #listAllChildren(gMainWindow)
 
+def isKeyDown(key):
+    pressed = ctypes.windll.user32.GetAsyncKeyState(key)
+    #print "pressed",pressed
+    highBit = pressed & 0x8000 #check high order bit
+    #highBit = pressed & 0xff #check high order bit
+    #print "high bit",highBit
+    return bool(highBit) 
+    # more info: http://stackoverflow.com/questions/5302456/how-do-i-get-the-high-and-low-order-bits-of-a-short
 
+import sys
+def isShiftDown():
+    return isKeyDown(VK_SHIFT)
+    
+_gShiftWasDown = 0
+def killModifierKeys():
+    """ this function will disable modifier keys that interfere with UDK operations. currently this is only the Shift-key, which creates popup dialogs when used in combination with Cut, Copy and Paste
+    don't forget to restore the previous key state with restoreModifierKeyState() so the user won't notice. """
+    global _gShiftWasDown
+    print "getting shift state"
+    sys.stdout.flush()
+    _gShiftWasDown = isShiftDown()
+    if _gShiftWasDown:
+        print "shift is down, upping"
+        sys.stdout.flush()
+        #focushwnd = GetFocus()
+        SendMessage(gMainWindow, WM_KEYUP, VK_SHIFT, 0)
+        #time.sleep(0.1)
+    # HACK: for some reason it takes a while for the call to WM_KEYUP to take effect
+    # that is why we wait a little after that here, of course that is not desired
+    # TODO: check alternatives like keybd_event, SendInput and SetKeyboardState
+
+def restoreModifierKeyState():
+    shiftis = isShiftDown()
+    print "shift is now down?",shiftis
+    sys.stdout.flush()
+    if _gShiftWasDown:
+        print "shift was down, downing"
+        sys.stdout.flush()
+        #focushwnd = GetFocus()
+        SendMessage(gMainWindow, WM_KEYDOWN, VK_SHIFT, 0)
+        #time.sleep(0.1)
+        # HACK: see killModifierKeys, same reason
+        shiftis = isShiftDown()
+        print "shift downed successfull?",shiftis
+        sys.stdout.flush()
+
+import udkWinInput
+def sendEditCut():
+    print "sending edit cut"
+    SetFocus(gMainWindow)
+    print "have set focus"
+    t_unshift_ctrl_x = (
+        #(VK_SHIFT, 2), #release shift
+        (0x11, 0), #ctrl
+        (0x58, 0), #x
+        (0x11, 2),
+        (0x58, 2),
+    ) 
+    udkWinInput.sendInput(t_unshift_ctrl_x)
+    print "done sending edit cut"
+
+def sendEditPaste():
+    print "sending edit paste"
+    SetFocus(gMainWindow)
+    t_unshift_ctrl_v = (
+        (VK_SHIFT, 2), #release shift
+        (0x11, 0), #ctrl
+        (0x56, 0), #v
+        (0x11, 2),
+        (0x56, 2),
+    ) 
+    udkWinInput.sendInput(t_unshift_ctrl_v)
+    
 def callEditCut():
+    print "edit cut called"
+    #sys.stdout.flush()
+    #killModifierKeys()
+    #time.sleep(0.1)
+    #killOrRestoreShift(True)
+    #SetFocus(gMainWindow)
+    #testUnshiftKeyboard()
+    #time.sleep(0.2)
+    #killAllMessages()
+    #SendMessage(gMainWindow, WM_KEYUP, VK_SHIFT, 0)
+    #ctypes.windll.user32.keybd_event(VK_SHIFT,0xAA,0x0002,0)
+    secureAskForShiftRelease()
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0),0)
+    #killOrRestoreShift(False)
+    #time.sleep(1.0)
+    #restoreModifierKeyState()
+    #time.sleep(0.1)
 
 def callEditCopy():
+    killModifierKeys()
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0),0)
+    restoreModifierKeyState()
 
 def callEditPaste():
+    print "edit paste called"
+    #sys.stdout.flush()
+    #killModifierKeys()
+    #testUnshiftKeyboard()
+    #time.sleep(0.2)
+    secureAskForShiftRelease()
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),0)
+    #SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),0,)
+    
+    #restoreModifierKeyState()
 
 def callEditDuplicate():
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuDuplicateID,0),0)
@@ -421,3 +526,84 @@ def callSelectNone():
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuSelectNoneID,0),0)
 
 
+def testUnshiftKeyboard():
+    buffType = ctypes.c_ubyte*256 #256 byte array
+    buff = buffType() #create one
+    status = ctypes.windll.user32.GetKeyboardState(ctypes.byref(buff))
+    if not status:
+        print "getting KeyboardState failed"
+        return
+    shiftIsDown = (buff[VK_SHIFT]&128) == 128 # high bit is 1 = key is down
+    print "shift is down",shiftIsDown
+    print "going to toggle shift"
+    #if shiftIsDown:
+    buff[VK_SHIFT] = 0 # key is not down, previous state (low bit) is unimportant
+    #else:
+    #    buff[VK_SHIFT] = 128 # key is down, previous state (low bit) is unimportant
+    status = ctypes.windll.user32.SetKeyboardState(ctypes.byref(buff))
+    if not status:
+        "setting keyboardState failed"
+    print "checking if shift is now down"
+    status = ctypes.windll.user32.GetKeyboardState(ctypes.byref(buff))
+    shiftIsDown = (buff[VK_SHIFT]&128) == 128 # high bit is 1 = key is down
+    print "shift is down",shiftIsDown
+
+
+def killOrRestoreShift(bKill):
+    global _gShiftWasDown
+    buffType = ctypes.c_ubyte*256 #256 byte array
+    buff = buffType() #create one
+    status = ctypes.windll.user32.GetKeyboardState(ctypes.byref(buff))
+    if not status:
+        print "# m2u: getting KeyboardState failed"
+        return
+    shiftIsDown = (buff[VK_SHIFT]&128) == 128 # high bit is 1 = key is down
+    print "shift is down",shiftIsDown
+    print "going to unshift"
+    _gShiftWasDown = shiftIsDown
+    #if shiftIsDown and bKill:
+    buff[VK_SHIFT] = 0 # key is not down, previous state (low bit) is unimportant
+    #elif _gShiftWasDown and not shiftIsDown and not bKill:
+    #    buff[VK_SHIFT] = 128 # key is down, previous state (low bit) is unimportant
+    status = ctypes.windll.user32.SetKeyboardState(ctypes.byref(buff))
+    if not status:
+        print "# m2u: setting KeyboardState failed"
+
+
+
+class POINT(ctypes.Structure):
+ _field_ = [
+     ("x", ctypes.c_long),
+     ("y", ctypes.c_long)
+ ]
+ 
+class MSG(ctypes.Structure):
+ _fields_ = [
+     ("hwnd", ctypes.POINTER(ctypes.c_long)),
+     ("message", ctypes.c_ulong),
+     ("wParam", ctypes.POINTER(ctypes.c_uint)),
+     ("lParam", ctypes.POINTER(ctypes.c_uint)),
+     ("time", ctypes.c_uint),
+     ("pt", POINT)
+ ]
+
+def killAllMessages():
+    msg = MSG()
+    c = 1
+    while c:
+        print "removing message"
+        c = ctypes.windll.user32.PeekMessageA(ctypes.byref(msg), gMainWindow, 0,0, 0x0001)
+
+def secureAskForShiftRelease():
+    """
+    this function will block execution until the user releases the shift key
+    """
+    if not isShiftDown():
+        return
+    #TODO: add warning that displays directly from the m2u GUI, so the user won't miss it. maya warnings aren't displayed while a move command is issued
+    m2u.core.getProgram().printWarning("# m2u: Please release the SHIFT KEY for Thread-Lock reasons")
+    sys.stdout.flush()
+    while True:
+        time.sleep(0.01)
+        if not isShiftDown():
+            return

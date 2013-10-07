@@ -89,11 +89,13 @@ def cutToClipboard():
     #command = "EDIT CUT"
     #udkUI.fireCommand(command)
     udkUI.callEditCut() #uses the menu instead of command field
+    #udkUI.sendEditCut() #uses keyboard input stream
 
 def pasteFromClipboard():
     #command = "EDIT PASTE" #no TO= preserves positions
     #udkUI.fireCommand(command)
     udkUI.callEditPaste() #uses the menu instead of command field
+    #udkUI.sendEditPaste() #uses keyboard input stream
 
 #OBJ - General object commands 
 #    EXPORT [PACKAGE=package] [TYPE=type] [FILE=file] [NAME=name] - Export the object of the given type with the given name to the specified file. 
@@ -144,6 +146,7 @@ def transformObject(objName, trans, rot, scale):
     # some execution speed when doing this or so?
     old = pyperclip.getcb()
     if old == "":
+        print "# m2u: could not copy to clipboard"
         return
     # we assume that transformation order is alwasy location, rotation, scale!
     locInd = str.find(old,"Location=(")
@@ -165,6 +168,7 @@ def transformObject(objName, trans, rot, scale):
     scaleRep = "DrawScale3D=(X=%f,Y=%f,Z=%f)" % scale
     #add them all together as a new object string
     new = part1 + locRep + "\n" + rotRep + "\n" + scaleRep + "\n" + part2
+    print "edited text"
     #print new
     
     """
