@@ -6,52 +6,53 @@
 
 import os
 
-#this function may be changed to return a user-defined folder
 def getTempFolder():
+    #this function may be changed to return a user-defined folder
     return os.getenv("TEMP")
 
 __program = None
 __editor = None
 
 def getProgram():
-    global __program
+    """get the program module"""
     return __program
 
 def getEditor():
-    global __editor
+    """get the editor module"""
     return __editor
 
 def initialize(programName,editorName="udk"):
-    """
+    """Initializes the whole m2u system.
     
-    Arguments:
-    - `program`: the program to use 'max' or 'maya'
-    - `editor`: the target engine to use currently only 'udk'
+    :param programName: the program to use 'max' or 'maya'
+    :param editorName: the target engine to use currently only 'udk'
+    
     """
     initProgram(programName)
     initEditor(editorName)
 
 def initProgram(programName):
-    """
-    Load the correct module for the program
-    """
+    """Load the correct module as program."""
     global __program
     
-    if programName == "maya":
-        import maya
-        __program = maya
-
-    elif programName == "max":
-        import max
-        __program = max
-    else:
-        print("# m2u: undefined program")
+    # if programName == "maya":
+    #     import maya
+    #     __program = maya
+    
+    # elif programName == "max":
+    #     import max
+    #     __program = max
+    # else:
+    #     print("# m2u: undefined program")
+    
+    try:
+        __program = __import__(programName)
+    except ImportError:
+        print "Unable to import program module %s" % (programName,)
 
 def initEditor(editorName):
+    """load the module for the editor"""
     global __editor
     import udk
     __editor = udk
-
-def alive():
-    print("m2u module (hub) is alive")
 

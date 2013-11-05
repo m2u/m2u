@@ -13,16 +13,20 @@ import m2u
 #from udkUIHelper import getIFileSaveDialogFromHwnd
 
 # UI element window handles
-gCommandField = None # the udk command line text field
+gUDKThreadProcessID = None # the UI-thread of UDK
 gMainWindow = None # the udk window
-gMenuExportID = None # export selected menu entry
+gCommandField = None # the udk command line text field
 
+gMenuExportID = None # export selected menu entry
 gMenuCutID = None # edit-cut menu entry
 gMenuCopyID = None # edit-copy menu entry
 gMenuPasteID = None # edit-paste menu entry
 gMenuDuplicateID = None # edit-duplicate menu entry
 gMenuDeleteID = None # edit-delete menu entry
 gMenuSelectNoneID = None # edit-selectNone menu entry
+
+gBtnHideSelectedID = None
+gBtnShowAllID = None
 
 # windows functions and constants
 # stuff for finding and analyzing UI Elements
@@ -46,6 +50,13 @@ SetFocus = ctypes.windll.user32.SetFocus
 PostMessage = ctypes.windll.user32.PostMessageA
 SendMessage = ctypes.windll.user32.SendMessageA
 SendMessageTimeout = ctypes.windll.user32.SendMessageTimeoutA
+SMTO_NORMAL = 0x0000
+SMTO_BLOCK = 0x0001
+SMTO_ERRORONEXIT = 0x0020
+SMTO_NOTIMEOUTIFNOTHUNG = 0x0008
+SMTO_FLAGS = SMTO_NORMAL|SMTO_ERRORONEXIT
+SMTO_TIMEOUT_MS = 1000 # 1 second
+
 WM_SETTEXT = 0x000C
 WM_KEYDOWN = 0x0100
 WM_KEYUP = 0x0101
@@ -59,6 +70,7 @@ VK_SHIFT = 0x10
 
 IDOK = 1 # used for dialogs
 IDCANCEL = 2 # used for dialogs
+BM_CLICK = 0x00F5 # button clicked message
 
 # menu stuff
 GetMenuItemID = ctypes.windll.user32.GetMenuItemID
@@ -85,6 +97,10 @@ GetNextDlgTabItem = ctypes.windll.user32.GetNextDlgTabItem
 
 # attaching is required for SendMessage and the like to actually work like it should
 AttachThreadInput = ctypes.windll.user32.AttachThreadInput
+
+def checkWinZeroReturn(value):
+    if value==0:
+        raise ctypes.WinError()
 
 class RECT(ctypes.Structure):
  _fields_ = [
@@ -121,9 +137,10 @@ class GUITHREADINFO(ctypes.Structure):
 #    return gti.hwndFocus
 
 class ThreadWinLParm(ctypes.Structure):
-    """
-    a lParam object to get a name to and an object back
-    from the a windows enumerator Proc function
+    """lParam object to get a name to and an object back from a windows
+    enumerator function.
+
+    .. seealso:: :func:`_getChildWindowByName`
     """
     _fields_=[
         ("name", ctypes.c_wchar_p),
@@ -135,28 +152,36 @@ class ThreadWinLParm(ctypes.Structure):
 
 
 def _getThreadWndByTitle(hwnd, lParam):
-    """
-    this is a callback function called by EnumThreadWindows
-    lParam has to be a ctypes byref instance of ThreadWinLParam
+    """callback function to be called by EnumThreadWindows
+
+    :param hwnd: the window handle
+    :param lParam: a :ref:`ctypes.byref` instance of :class:`ThreadWinLParam`
+
+    :deprecated: use :func:`_getChildWindowByName` instead.
+    
     """
     length = GetWindowTextLength(hwnd)
     buff = ctypes.create_unicode_buffer(length + 1)
     GetWindowText(hwnd, buff, length + 1)
     param = ctypes.cast(lParam, ctypes.POINTER(ThreadWinLParm)).contents
     if buff.value == param.name:
-        print "Found Wanted Thread Window"
+        #print "Found Wanted Thread Window"
         param.hwnd = hwnd
         return False #stop iteration
     return True
 
 def _getChildWindowByName(hwnd, lParam):
-    """
-    callback function to be called by EnumChildWindows
+    """callback function to be called by EnumChildWindows, see
+    :func:`getChildWindowByName`
 
+    :param hwnd: the window handle
+    :param lParam: a :ref:`ctypes.byref` instance of :class:`ThreadWinLParam`
+    
     if name is None, the cls name is taken,
     if cls is None, the name is taken,
     if both are None, all elements are printed
     if both have values, only the element matching both will fit
+    
     """
     length = GetWindowTextLength(hwnd)
     buff = ctypes.create_unicode_buffer(length + 1)
@@ -186,9 +211,22 @@ def _getChildWindowByName(hwnd, lParam):
         print "wnd cls: "+cbuff.value+" name: "+buff.value+" enum: "+str(param._enum)
     return True
 
-def getChildWindowByName(hwnd, name = '', cls = ''):
-    """
-    convenience function, see _getChildWindowByName
+def getChildWindowByName(hwnd, name = None, cls = None):
+    """find a window by its name or clsName, returns the window's hwnd
+    
+    :param hwnd: the parent window's hwnd
+    :param name: the name/title to search for
+    :param cls: the clsName to search for
+
+    :return: the hwnd of the matching child window
+    
+    if name is None, the cls name is taken,
+    if cls is None, the name is taken,
+    if both are None, all elements are printed
+    if both have values, only the element matching both will fit.
+    
+    .. seealso:: :func:`_getChildWindowByName`, :func:`getChildWindowByEnumPos`
+    
     """
     param = ThreadWinLParm(name=name,cls=cls,_enum=-1)
     lParam = ctypes.byref(param)
@@ -196,7 +234,7 @@ def getChildWindowByName(hwnd, name = '', cls = ''):
     return param.hwnd
 
 def _getChildWindowByEnumPos(hwnd, lParam):
-    """ callback function """
+    """ callback function, see :func:`getChildWindowByEnumPos` """
     param = ctypes.cast(lParam, ctypes.POINTER(ThreadWinLParm)).contents
     param._enum += 1
     if param._enum == param.enumPos:
@@ -205,9 +243,20 @@ def _getChildWindowByEnumPos(hwnd, lParam):
     return True
 
 def getChildWindowByEnumPos(hwnd, pos):
-    """
-    uses the creation order which is reflected in Enumerate functions to get the handle to a certain window. this is useful when the name or cls is not unique
-    you can count the enum pos by printing all child windows of a window
+    """get a child window by its enum pos, return its hwnd
+
+    :param hwnd: the parent window's hwnd
+    :param pos: the number to search for
+
+    :return: the hwnd of the matching child window
+    
+    This function uses the creation order which is reflected in Windows Enumerate
+    functions to get the handle to a certain window. This is useful when the
+    name or cls of the desired window is not unique or not given.
+    
+    You can count the enum pos by printing all child windows of a window.
+    .. seealso:: :func:`getChildWindowByName`
+    
     """
     param = ThreadWinLParm(name = None, cls = None, enumPos = pos, _enum = -1)
     EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByEnumPos), ctypes.byref(param))
@@ -215,19 +264,26 @@ def getChildWindowByEnumPos(hwnd, pos):
 
     
 def attachThreads(hwnd):
-    """
-    this will tell windows to attach the program and the udk threads
-    this will give us some benefits in control, for example SendMessage calls to the udk thread will only return when udk has processed the message, amazing!
+    """tell Windows to attach the program and the udk threads.
+    
+    This will give us some benefits in control, for example SendMessage calls to
+    the udk thread will only return when udk has processed the message, amazing!
+    
     """
     thread = GetWindowThreadProcessId(hwnd, 0) #udk thread
+    #thread = gUDKThreadProcessID
+    global gUDKThreadProcessID
+    gUDKThreadProcessID = thread
     thisThread = threading.current_thread().ident #program thread
     print "# m2u: Attaching threads",thread,"and",thisThread
     AttachThreadInput(thread, thisThread, True)
     
 def _getWindows(hwnd, lParam):
-    """
-    get the UEd Window (and fill the ui element vars)
-    note: this is a callback function. windows itself will call this function for every top-level window in EnumWindows iterator function
+    """callback function, find the UEd Window (and fill the ui element vars)
+    
+    This is a callback function. Windows itself will call this function for
+    every top-level window in EnumWindows iterator function.
+    .. seealso:: :func:`connectToUEd`
     """
     if IsWindowVisible(hwnd):
         length = GetWindowTextLength(hwnd)
@@ -238,10 +294,12 @@ def _getWindows(hwnd, lParam):
         #    print "maya thread:",thread
         if "Unreal Development Kit" in buff.value:
             print "# m2u: Found UDK"
-            global gMainWindow
+            global gMainWindow, gUDKThreadProcessID
             gMainWindow = hwnd
-            
+            #thread = GetWindowThreadProcessId(hwnd, 0) #udk thread
+            #gUDKThreadProcessID = thread
             attachThreads(gMainWindow)
+            
             # get the command line field
             global gCommandField
             child = 0
@@ -266,6 +324,26 @@ def _getWindows(hwnd, lParam):
             gMenuDeleteID = GetMenuItemID(hEditMenu, 11) #Delete
             gMenuSelectNoneID = GetMenuItemID(hEditMenu, 13)
             
+            #get buttons
+            global gBtnShowAllID, gBtnHideSelectedID
+            #child = FindWindowEx(gMainWindow, 0, u"Select", 0)
+            child = getChildWindowByName(gMainWindow, name = "Select", cls = None)
+            gBtnHideSelectedID = getChildWindowByEnumPos(child, 1)
+            gBtnShowAllID = getChildWindowByEnumPos(child, 3)
+            
+            #get stuff from other windows
+            #get Layers Menu Items
+            layerWindow = getThreadWindowByName(gUDKThreadProcessID, name = "Layers")
+            hMenu = GetMenu(layerWindow)
+            hLayerMenu = GetSubMenu(hMenu, 0)
+            #gMenuLayerNewID = GetMenuItemID(hLayerMenu, 0) # new layer (popup)
+            #gMenuLayerRenameID = GetMenuItemID(hLayerMenu, 1) # rename layer (popup) 
+            gMenuLayerDeleteID = GetMenuItemID(hLayerMenu, 2) # delete layer
+            gMenuLayerAddActorsID = GetMenuItemID(hLayerMenu, 4) 
+            gMenuLayerRemoveActorsID = GetMenuItemID(hLayerMenu, 5)
+            
+            
+            
             return False # we found udk, no further iteration required
     return True
 
@@ -276,11 +354,31 @@ def connectToUEd():
         print "# m2u: No UDK instance found."
     return (gMainWindow is not None)
 
+def getThreadWindowByName(thread, name = None, cls = None):
+    """find a window of a thread by its name/title, returns the window's hwnd
+    
+    :param thread: the ID of the UI-thread
+    :param name: the name/title to search for
+    :param cls: the clsName to search for
+
+    :return: the hwnd of the matching window
+    
+    if name is None, the cls name is taken,
+    if cls is None, the name is taken,
+    if both are None, all windows are printed
+    if both have values, only the window matching both will fit.
+    
+    .. seealso:: :func:`getChildWindowByName`
+    
+    """
+    param = ThreadWinLParm(name=name,cls=cls,_enum=-1)
+    #EnumThreadWindows(thread, EnumWindowsProc(_getThreadWndByTitle), ctypes.byref(param))
+    lParam = ctypes.byref(param)
+    EnumThreadWindows( thread, EnumWindowsProc(_getChildWindowByName),lParam)
+    return param.hwnd
 
 def fireCommand(command):
-    """
-    executes the command string in UdK (uses the command field)
-    """
+    """executes the command string in UdK (uses the command field)"""
     global gCommandField
     SendMessage(gCommandField, WM_SETTEXT, 0, str(command) )
     #PostMessage(gCommandField, WM_CHAR, VK_RETURN, 0)
@@ -481,40 +579,23 @@ def sendEditPaste():
     udkWinInput.sendInput(t_unshift_ctrl_v)
     
 def callEditCut():
-    print "edit cut called"
-    #sys.stdout.flush()
-    #killModifierKeys()
-    #time.sleep(0.1)
-    #killOrRestoreShift(True)
-    #SetFocus(gMainWindow)
-    #testUnshiftKeyboard()
-    #time.sleep(0.2)
-    #killAllMessages()
-    #SendMessage(gMainWindow, WM_KEYUP, VK_SHIFT, 0)
-    #ctypes.windll.user32.keybd_event(VK_SHIFT,0xAA,0x0002,0)
-    secureAskForShiftRelease()
-    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0),0)
-    #killOrRestoreShift(False)
-    #time.sleep(1.0)
-    #restoreModifierKeyState()
-    #time.sleep(0.1)
+    secureWaitForShiftRelease()
+    #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0),0)
+    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0), 0, SMTO_FLAGS, SMTO_TIMEOUT_MS)
+    #checkWinZeroReturn(v)
 
 def callEditCopy():
-    killModifierKeys()
-    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0),0)
-    restoreModifierKeyState()
+    secureWaitForShiftRelease()
+    #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0),0)
+    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0), 0, SMTO_FLAGS, SMTO_TIMEOUT_MS)
+    #checkWinZeroReturn(v)
+
 
 def callEditPaste():
-    print "edit paste called"
-    #sys.stdout.flush()
-    #killModifierKeys()
-    #testUnshiftKeyboard()
-    #time.sleep(0.2)
-    secureAskForShiftRelease()
-    SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),0)
-    #SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),0,)
-    
-    #restoreModifierKeyState()
+    secureWaitForShiftRelease()
+    #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),0)
+    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0), 0, SMTO_FLAGS, SMTO_TIMEOUT_MS)
+    #checkWinZeroReturn(v)
 
 def callEditDuplicate():
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuDuplicateID,0),0)
@@ -524,6 +605,12 @@ def callEditDelete():
 
 def callSelectNone():
     SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuSelectNoneID,0),0)
+
+def callHideSelected():
+    SendMessage(gBtnHideSelectedID, BM_CLICK, 0, 0)
+
+def callShowAll():
+    SendMessage(gBtnShowAllID, BM_CLICK, 0, 0)
 
 
 def testUnshiftKeyboard():
@@ -594,14 +681,12 @@ def killAllMessages():
         print "removing message"
         c = ctypes.windll.user32.PeekMessageA(ctypes.byref(msg), gMainWindow, 0,0, 0x0001)
 
-def secureAskForShiftRelease():
-    """
-    this function will block execution until the user releases the shift key
-    """
+def secureWaitForShiftRelease():
+    """will block execution until the user releases the shift key."""
     if not isShiftDown():
         return
     #TODO: add warning that displays directly from the m2u GUI, so the user won't miss it. maya warnings aren't displayed while a move command is issued
-    m2u.core.getProgram().printWarning("# m2u: Please release the SHIFT KEY for Thread-Lock reasons")
+    #m2u.core.getProgram().printWarning("# m2u: Please release the SHIFT KEY for Thread-Lock reasons")
     sys.stdout.flush()
     while True:
         time.sleep(0.01)

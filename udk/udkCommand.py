@@ -1,11 +1,19 @@
-# this file defines functions for actual commands which interact with UDK
+""" this file defines functions for actual commands which interact with UDK
+
+commands will either be issued by sending console commands to the Editor or by
+activating buttons or menu-items in the Editor-UI.
+see http://udn.epicgames.com/Three/EditorConsoleCommands.html
+
+Functionality for interaction with the UI is found in :mod:`udkUI`
+
+"""
+
 import udkUI
 #import Tkinter
 import pyperclip
 import re
 import time
 
-#see http://udn.epicgames.com/Three/EditorConsoleCommands.html
 
 #-- helper functions --
 def _convertRotationToUDK(rotTuple):
@@ -15,18 +23,27 @@ def _convertRotationToUDK(rotTuple):
 
 #-- command functions --
 def setCamera(x,y,z,rx,ry,rz):
-    """    while rx>360:
-        rx = rx-360
-    while rx<0:
-        rx = rx+360
-    while ry>360:
-        ry = ry-360
-    while ry<0:
-        ry = ry+360
-    while rz>360:
-        rz = rz-360
-    while rz<0:
-        rz = rz+360             """
+    """Set the Camera in UDK
+
+    :param x,y,z: position for the camera
+    :param rx,ry,rz: rotation for the camera
+
+    By telling UDK to set the camera, all viewport cameras will be set to the provided
+    position and rotation, there is no option to set a specific camera only.
+
+    """
+    # while rx>360:
+    #     rx = rx-360
+    # while rx<0:
+    #     rx = rx+360
+    # while ry>360:
+    #     ry = ry-360
+    # while ry<0:
+    #     ry = ry+360
+    # while rz>360:
+    #     rz = rz-360
+    # while rz<0:
+    #     rz = rz+360
     rot=_convertRotationToUDK((rx,ry,rz))
     command = "BUGITGO %f %f %f %f %f %f" % (x,y,z,rot[0],rot[1],rot[2])   
     udkUI.fireCommand(command)
@@ -43,13 +60,21 @@ def deselectAll():
     udkUI.callSelectNone() #uses the menu instead of command field
 
 def selectByNames(namesList):
-    #actor select adds to selection
+    """add provided objects to the current selection
+
+    :param namesList: list containing the object names
+
+    """
     for name in namesList:
         command = "ACTOR SELECT NAME="+name
         udkUI.fireCommand(command)
 
 def selectByName(name): 
-    #select by name deselects everything else!
+    """select provided object, deselect everything else!
+
+    :param name: name of the object to select
+
+    """
     command = "SELECT SELECTNAME NAME="+name
     udkUI.fireCommand(command)
 
@@ -103,34 +128,50 @@ def pasteFromClipboard():
 #    SAVEPACKAGE [FILE=file] [PACKAGE=package] - Save the given package to the specified file.
 
 def exportObjToFile(package, objName, objType, filePath):
-    """
-    all parameters are strings, package is only the package name, no groups
+    """all parameters are strings, package is only the package name, no groups
     filePath must include the filename and extension
+
+    :deprecated: this only works if the resources are on the PC, a real export
+    won't work that way 
     """
     command = "OBJ EXPORT PACKAGE=%s TYPE=%s FILE=%s NAME=%s" % \
               (package, objType, filePath, objName)
     udkUI.fireCommand(command)
 
 def exportMeshToFile(meshSig, filePath, withTextures=True):
-    """
-    exports a single static mesh by placing it in the map and deleting it after export
+    """ exports a single static mesh.
+
+    :param meshSig: the fully qualified mesh name (package.groups.mesh)
+    :param filePath: the complete path of the file where to export to
+    :param withTextures: export materials as Textures, works only if export is obj
+
+    Exports the mesh by placing it in the map and deleting it after export
     it can export the materials textures as bmp
-    meshSig is the fully qualified mesh name (package.groups.mesh)
+    
     """
+    #TODO: do the stuff
     udkUI.callExportSelected(folder, withTextures)
 
 def exportSelectedToFile(filePath, withTextures=True):
-    """
-    exports the current selection into a file
+    """exports the current selection into a file
+
+    :param filePath: the complete path of the file where to export to
+    :param withTextures: export materials as Textures, works only if export is obj
+
     """
     udkUI.callExportSelected(filePath, withTextures)
 
 def transformObject(objName, trans, rot, scale):
-    """
-    transforms an object by cutting it from the level,
+    """transform an object with absolute transformations.
+
+    :param objName: name of the object to modify
+    :param trans: translation float tuple
+    :param rot: rotation float tuple
+    :param scale: 3d scale float tuple
+
+    Transforms an object by cutting it from the level,
     replacing parameters and pasting the changed text to the level
-    objName is only the instance name
-    trans rot and scale are float tuples (f,f,f)
+    
     """
     rot = _convertRotationToUDK(rot)
     selectByName(objName)
@@ -198,3 +239,13 @@ def transformObject(objName, trans, rot, scale):
     # before resetting the clipboard.
     # TODO: find a sync-wait-whatever function from windows
     #pyperclip.setcb(keep) #restore original clipboard
+
+def hideSelected():
+    udkUI.callHideSelected()
+
+def unhideAll():
+    udkUI.callShowAll()
+
+def unhideSelected():
+    command = "ACTOR UNHIDE SELECTED" # TODO: cmd does not work
+    udkUI.fireCommand(command)
