@@ -3,14 +3,8 @@
 
 import ctypes #required for windows ui stuff
 
-import os
-import glob 
 import time
-
 import threading
-import m2u
-
-#from udkUIHelper import getIFileSaveDialogFromHwnd
 
 # UI element window handles
 gUDKThreadProcessID = None # the UI-thread of UDK

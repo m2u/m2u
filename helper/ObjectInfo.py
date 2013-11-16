@@ -16,9 +16,9 @@ class ObjectInfo(object):
         - `scale`: 3d tuple
         - `attrs`: dictionary with name:value pairs for additional attributes
         """
-        self._name = name
-        self._pos = pos
-        self._rot = rot
-        self._scale = scale
-        self._attrs = attrs
+        self.name = name
+        self.position = pos
+        self.rotation = rot
+        self.scale = scale
+        self.attrs = attrs
         

@@ -27,12 +27,24 @@ The part we are most interested in are the Actors. We have one function to strip
 
 
 def parseActors(unrtext):
-    """ This function will parse UnrealText beginning with Begin Map, ending with End Map or Level, and return a list of ObjectInfos of the Actors in the Level
+    """ parse UnrealText and return a list of ObjectInfos of the Actors in
+    the Level.
+
+    :param unrtext: the unreal text for the level
+    :return: list of :class:`m2u.helper.ObjectInfo.ObjectInfo`
+
+    Use this function to convert a complete level or multi-selection. 
     """
     pass
 
-def _parseActor(unrtext):
-    """ This function will parse UnrealText of a single Actor into an ObjectInfo representation.
+def parseActor(unrtext):
+    """ parse UnrealText of a single Actor into an ObjectInfo representation.
+
+    :param unrtext: the unreal text for the level
+    :return: :class:`m2u.helper.ObjectInfo.ObjectInfo`
+
+    .. note: if you provide text with more than one Actor in it, only the first
+    Actor will be converted. If you have a multi-selection, use :func:`parseActors`
     """
     pass
 
@@ -41,5 +53,5 @@ def unrTextFromObjects(objInfoList):
     """
     pass
 
-def _unrTextFromOject(objInfo):
+def unrTextFromOject(objInfo):
     pass
