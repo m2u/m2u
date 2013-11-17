@@ -77,3 +77,12 @@ def fetchSelectedObjectsFromEditor():
 def printWarning(s):
     pm.warning(s)
 
+
+
+
+
+
+
+
+
+

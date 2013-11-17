@@ -243,3 +243,14 @@ def renameObject(name, newName):
     if unrtext is None:
         return
     objInfo = udkParser.parseActor(unrtext)
+    
+
+
+
+
+
+
+
+
+
+

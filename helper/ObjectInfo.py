@@ -6,7 +6,7 @@ class ObjectInfo(object):
     Meshes, Cameras, Particle Effects, Lights etc.
     """
     
-    def __init__(self, name, pos, rot, scale, attrs):
+    def __init__(self, name="", pos=(0,0,0), rot=(0,0,0), scale=(1,1,1), attrs={}):
         """
         
         Arguments:
