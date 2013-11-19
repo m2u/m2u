@@ -21,6 +21,7 @@ gMenuSelectNoneID = None # edit-selectNone menu entry
 
 gBtnHideSelectedID = None
 gBtnShowAllID = None
+gBtnIsolateSelectedID = None
 
 # windows functions and constants
 # stuff for finding and analyzing UI Elements
@@ -319,9 +320,10 @@ def _getWindows(hwnd, lParam):
             gMenuSelectNoneID = GetMenuItemID(hEditMenu, 13)
             
             #get buttons
-            global gBtnShowAllID, gBtnHideSelectedID
+            global gBtnIsolateSelectedID, gBtnShowAllID, gBtnHideSelectedID
             #child = FindWindowEx(gMainWindow, 0, u"Select", 0)
             child = getChildWindowByName(gMainWindow, name = "Select", cls = None)
+            gBtnIsolateSelectedID = getChildWindowByEnumPos(child, 0)
             gBtnHideSelectedID = getChildWindowByEnumPos(child, 1)
             gBtnShowAllID = getChildWindowByEnumPos(child, 3)
             
@@ -605,6 +607,9 @@ def callHideSelected():
 
 def callShowAll():
     SendMessage(gBtnShowAllID, BM_CLICK, 0, 0)
+
+def callIsolateSelected():
+    SendMessage(gBtnIsolateSelectedID, BM_CLICK, 0, 0)
 
 
 def testUnshiftKeyboard():

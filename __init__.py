@@ -9,6 +9,17 @@ def getVersion():
 # recursive reload used for easing up development
 from types import ModuleType
 
+def reloadAll():
+    reload(m2u.core)
+    
+    reload(m2u.udk)
+    reload(m2u.udk.udkUI)
+    reload(m2u.udk.udkCommand)
+    reload(m2u.udk.udkParser)
+    reload(m2u.udk.udkComposer)
+    reload(m2u.udk.udkTypes)
+    
+
 def rreload(module):
     """Recursively reload modules.
     

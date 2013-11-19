@@ -44,6 +44,17 @@ from the used program and editor combination, we have only one place to look at
 if something for the parsing process changes. And it is much easier to work with
 objects in all the other functions than to fiddle with text-parsing everywhere.
 
+.. note: Information that is present in the header (the line containing
+`Begin...`), speaking `Name`, `Class`, `Archetype` takes always precedence over
+the same attribute's assignment in the body.
+For Object Components, the `ObjName` specified in the header will be the name
+of the object, not the `Name` in header or body.
+
+(I think we generally do not need to fiddle with renaming object components,
+because the name is only unique inside the parent objects namespace.
+If we do, we need to make sure that the correct name is assigned to stuff
+like `CollisionComponent` of the Actor too.)
+
 """
 
 #TODO: what about differentiating objects like meshes and lights?
@@ -52,6 +63,7 @@ objects in all the other functions than to fiddle with text-parsing everywhere.
 import re
 
 from m2u.helper.ObjectInfo import ObjectInfo
+from m2u.udk.udkTypes import getCommonTypeFromInternal
 
 def parseActors(unrtext):
     """ parse UnrealText and return a list of ObjectInfos of the Actors in
@@ -103,12 +115,14 @@ def parseActor(unrtext, safe=False):
             if lines[i].startswith("Begin Actor"):
                 sindex = i
                 break
-    g = re.search("Name=(.+)\s+", lines[sindex])
+    g = re.search("Class=(.+?) Name=(.+?)\s+", lines[sindex])
     if not g: # no name? invalid text, obviously
-        print "no name found for object"
+        print "no name and type found for object"
         return None
-    objname = g.group(1)
-    objInfo = ObjectInfo(objname)
+    objtype = g.group(1)
+    objname = g.group(2)
+    objtypecommon = getCommonTypeFromInternal(objtype)
+    objInfo = ObjectInfo(objname, objtype, objtypecommon)
     textblock = ""
     for line in lines[sindex+1:]:
         # add jumping over sub-object groups (skip lines inbetween or so)
@@ -142,4 +156,5 @@ def _getFloatTuple(text):
             pass
             # TODO: maybe do some information stuff here
     return (a[0],a[1],a[2])
+
 

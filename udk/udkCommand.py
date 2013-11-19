@@ -18,6 +18,7 @@ except ImportError:
 
 from m2u.udk import udkUI
 from m2u.udk import udkParser
+from m2u.udk import udkComposer
 
 ###########################
 # #-- helper functions -- #
@@ -37,7 +38,7 @@ def getUnrealTextFromSelection(cut = False):
         copyToClipboard()
     text = pyperclip.getcb()
     if text == "":
-        print "# m2u: could not copy to clipboard"
+        print "# m2u debug: could not copy to clipboard"
         return None
     return text
 
@@ -213,12 +214,18 @@ def unhideAll():
     udkUI.callShowAll()
 
 def isolateSelected():
-    print "not implemented yet"
-    pass
+    udkUI.callIsolateSelected()
+
 
 def unhideSelected():
     command = "ACTOR UNHIDE SELECTED" # TODO: cmd does not work
     udkUI.fireCommand(command)
+
+def pasteFromObjectInfoList(objInfoList):
+    ntext = udkComposer.unrTextFromObjects(objInfoList)
+    pyperclip.setcb(ntext)
+    pasteFromClipboard()
+    # TODO: maybe restore original clipboard text?
 
 def renameObject(name, newName):
     """try to assign a new name to an object.
@@ -226,7 +233,9 @@ def renameObject(name, newName):
     :param name: current name of the object
     :param newName: desired name for the object
 
-    :return: None if successful, string otherwise
+    :return: tuple (bool,string) True if no problem occured, False otherwise
+    if False, the string will be the name the Editor assigned or None if no
+    renaming took place
 
     The problem with assigning new names to objects is, that the desired name
     may already be in use or otherwise invalid. This function will TRY to rename
@@ -236,14 +245,60 @@ def renameObject(name, newName):
     either trying to rename again with another name, assigning the returned name
     to the object in the Program, informing the user that he must enter another
     name etc.
+
+    .. note: UDK will always use the given name, even if an object already has
+    that name, as long as the name is valid. The old object will lose it's
+    name.
+
+    To make sure other objects don't lose their name, we will first ask
+    UDK if the name we want to assign is already taken (we can check that by
+    trying to select the object) and return early if it is. If not, we will
+    still check if the name we wanted to assign actually ended up that way
+    in UDK.
+    
+    .. note: UDK seems to have a very non-restrictive name-policy, accepting
+    nearly everything you throw at it, although it may break stuff!
     
     """
-    selectByName(name)
+    # check if the newName is already taken
+    selectByName(newName)
+    unrtext = getUnrealTextFromSelection(False)
+    if unrtext is not None:
+        print "Error: name '%s' already taken" % newName
+        return (False,None)
+    
+    # check if the object we want to rename exists
+    selectByName(name) 
     unrtext = getUnrealTextFromSelection(True)
     if unrtext is None:
-        return
-    objInfo = udkParser.parseActor(unrtext)
+        print "Error: no object with name '%s' exists" % name
+        return (False, None)
     
+    # change name and paste back to Udk
+    objInfo = udkParser.parseActor(unrtext)
+    objInfo.name = newName
+    pasteFromObjectInfoList([objInfo,])
+    
+    # check if name of pasted object is ok
+    # TODO: this maybe optional, because it may take a lot of processing time
+    # so maybe give the function a flag to skip this checking?
+    # note: udk auto-selects newly pasted objects for us.
+    chktext = getUnrealTextFromSelection(False)
+    if chktext is None:
+        print "Error: pasting renamed object failed"
+        # TODO: we might try to paste back the initally cutted object here
+        # or let the user hit undo?
+        return (False,None)
+    
+    chkObj = udkParser.parseActor(chktext)
+    if chkObj.name == newName:
+        # renaming succesfull, yeah!
+        return (True,None)
+    else:
+        # the object was renamed! but the editor changed the name...
+        print ("Warning: rename returned a different name than desired "
+               "('%s' instead of '%s')." % (chkObj.name, newName))
+        return (False, chkObj.name)
 
 
 
