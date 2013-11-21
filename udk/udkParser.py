@@ -135,7 +135,8 @@ def parseActor(unrtext, safe=False):
         elif line.startswith("Location="):
             objInfo.position = _getFloatTuple(line)
         elif line.startswith("Rotation="):
-            objInfo.rotation = _getFloatTuple(line)
+            rot = _getFloatTuple(line)
+            objInfo.rotation = _convertRotationFromUDK(rot)
         elif line.startswith("DrawScale3D="):
             objInfo.scale = _getFloatTuple(line)
         else:
@@ -158,3 +159,11 @@ def _getFloatTuple(text):
     return (a[0],a[1],a[2])
 
 
+
+def _convertRotationFromUDK(rotTuple):
+    """ converts udk's 65536 for a full rotation format into 360deg format """
+    # 0.0054931640625 is 360.0/65536
+    newrot=((rotTuple[0]*0.0054931640625),
+            (rotTuple[1]*0.0054931640625),
+            (rotTuple[2]*0.0054931640625))
+    return newrot

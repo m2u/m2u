@@ -33,7 +33,7 @@ def unrTextFromOject(objInfo):
     text += "\n"
     # the transform info
     text += transToText(objInfo.position) + "\n"
-    text += rotToText(objInfo.rotation) + "\n"
+    text += rotToText(_convertRotationToUDK(objInfo.rotation)) + "\n"
     text += scaleToText(objInfo.scale) + "\n"
     # the rest
     text += objInfo.attrs["textblock"]
@@ -58,6 +58,16 @@ def rotToText(t):
 def scaleToText(t):
     """ converts a scaling tuple to unr text """
     return "DrawScale3D=(X=%f,Y=%f,Z=%f)" % t
+
+
+def _convertRotationToUDK(rotTuple):
+    """ converts 360deg into udk's 65536 for a full rotation format """
+    # 182.04444... is 65536.0/360
+    # use %65536 to keep rotations smaller than one full rotation
+    newrot=((rotTuple[0]*182.04444444444445)%65536,
+            (rotTuple[1]*182.04444444444445)%65536,
+            (rotTuple[2]*182.04444444444445)%65536)
+    return newrot
 
 
 def createNewStaticMeshText(objInfo):

@@ -24,10 +24,15 @@ from m2u.udk import udkComposer
 # #-- helper functions -- #
 ###########################
 
+# this function should be removed. converting to and from udk rotation is task
+# of the udkParser and udkComposer, so that only unrealText has the strange rot
+# format, while everywhere else a normal rotation of 360 degree is used
 def _convertRotationToUDK(rotTuple):
     """ converts into udk's 65536 for a full rotation format """
-    newrot=((rotTuple[0]*182.04444)%65536, (rotTuple[1]*182.04444)%65536,
-            (rotTuple[2]*182.04444)%65536)
+    # 182.04444... is 65536.0/360
+    newrot=((rotTuple[0]*182.04444444444445)%65536,
+            (rotTuple[1]*182.04444444444445)%65536,
+            (rotTuple[2]*182.04444444444445)%65536)
     return newrot
 
 def getUnrealTextFromSelection(cut = False):
@@ -67,7 +72,7 @@ def deselectAll():
     udkUI.callSelectNone() #uses the menu instead of command field
 
 def selectByNames(namesList):
-    """add provided objects to the current selection
+    """add objects to the current selection
 
     :param namesList: list containing the object names
 
@@ -77,7 +82,7 @@ def selectByNames(namesList):
         udkUI.fireCommand(command)
 
 def selectByName(name): 
-    """select provided object, deselect everything else!
+    """select object, deselect everything else!
 
     :param name: name of the object to select
 
@@ -156,7 +161,7 @@ def exportSelectedToFile(filePath, withTextures=True):
     """
     udkUI.callExportSelected(filePath, withTextures)
 
-def transformObject(objName, trans, rot, scale):
+def _transformObject_old(objName, trans, rot, scale):
     """transform an object with absolute transformations.
 
     :param objName: name of the object to modify
@@ -301,11 +306,136 @@ def renameObject(name, newName):
         return (False, chkObj.name)
 
 
+def getObjectInfosFromSelection(cut=False):
+    unrtext = getUnrealTextFromSelection(cut)
+    if unrtext is None:
+       return None
+    return  udkParser.parseActors(unrtext)
+
+def getObjectInfoFromName(name, cut=False):
+    selectByName(name)
+    unrtext = getUnrealTextFromSelection(cut)
+    if unrtext is None:
+        return None
+    return udkParser.parseActor(unrtext)
+
+def getObjectInfosFromNames(nameList, cut=False):
+    deselectAll()
+    selectByNames(nameList)
+    unrtext = getUnrealTextFromSelection(cut)
+    if unrtext is None:
+        return None
+    return udkParser.parseActors(unrtext)
 
 
+def duplicateObject(name, dupName, t=None, r=None, s=None):
+    """ duplicates object with name and assigns dupName to the copy
+
+    :param name: string, object to duplicate
+    :param dupName: string, name for the duplicated object
+    :param t: translate tuple or None if to take from original
+    :param r: rotation tuple or None if to take from original
+    :param s: scale tuple or None if to take from original
+
+    :return: tuple (int,string) the int will be
+        - 0 if no problem occured
+        - 1 if the original object could not be found
+        - 2 if the name for the duplicate is already taken
+        - 3 if the name was changed by the editor
+        - 4 udk error, reason unknown
+    if the return value is 3, the string will be the name the Editor
+    assigned and None otherwise
+
+    If the return value is 1 or 2, the calling function should change
+    the name(s) and try again.
+    If the return value is (3,string) the calling function must assign
+    the returned name to the original object in the Program or find a new
+    fitting name and assign it to the duplicated object using the
+    :func:`renameObject` function with the returned string as name.
+
+    .. seealso: :func:`renameObject`
+
+    """
+    # TODO: this function is very similar to renameObject, maybe common
+    # functionality can be delegated to a common function
+    
+    # check if the newName is already taken
+    selectByName(dupName)
+    unrtext = getUnrealTextFromSelection(False)
+    if unrtext is not None:
+        print "Error: name '%s' already taken" % dupName
+        return (2,None)
+    
+    # check if the object we want to duplicate exists
+    objInfo = getObjectInfoFromName(name)
+    if objInfo is None:
+        print "Error: Duplication failed, original object could not be found."
+        return (1,None)
+        
+    objInfo.name = dupName
+    if t is not None: objInfo.position = t
+    if r is not None: objInfo.rotation = r
+    if s is not None: objInfo.scale = s
+    pasteFromObjectInfoList([objInfo,])
+    
+    # check if name of pasted object is ok
+    # TODO: this maybe optional, because it may take a lot of processing time
+    # so maybe give the function a flag to skip this checking?
+    # note: udk auto-selects newly pasted objects for us.
+    chktext = getUnrealTextFromSelection(False)
+    if chktext is None:
+        print "Error: pasting new object failed"
+        # TODO: we might try to paste back the initally cutted object here
+        # or let the user hit undo?
+        return (4,None)
+    
+    chkObj = udkParser.parseActor(chktext)
+    if chkObj.name == dupName:
+        # renaming succesfull, yeah!
+        return (0,None)
+    else:
+        # the object was renamed! but the editor changed the name...
+        print ("Warning: editor returned a different name than desired "
+               "('%s' instead of '%s')." % (chkObj.name, dupName))
+        return (3, chkObj.name)
 
 
+def editExistingObject(name, replObjInfo):
+    """
+    vermutlich sollte auch transform object umgeschrieben werden auf ein
+    editExistingObject(objInfo), wo einfach versucht wird das object das
+    bereits existiert mit einem aus dem objInfo erzeugten zu ersetzen
+    die gleiche funktin ist dann allgemein nutzbar transform aber auch
+    zum setzen von anderen eigenschaften, wie z.b. den genuzten mesh oder so
 
+    das problem ist, von wegen ersetzen, muss ja erstmal das original objekt geholt werden
+    wo wird festgelegt, welche attribute ersetzt werden etc? demnach kann das eigentlich nur eine interne funkiton sein, die von doch spezialisierten (auf transformation etc) funktionen aufgerufen wird
+    """
+    pass
+
+
+def transformObject(objName, t=None, r=None, s=None):
+    """transform an object with absolute transformations.
+
+    :param objName: name of the object to modify
+    :param t: translation float tuple or None if not to change
+    :param r: rotation float tuple or None if not to change
+    :param s: 3d scale float tuple or None if not to change
+
+    Transforms an object by cutting it from the level,
+    replacing parameters and pasting the changed object back
+    to the level.
+    
+    """
+    objInfo = getObjectInfoFromName(objName, True)
+    if objInfo is None:
+        #print "Error: no object with name %s found." % objName
+        return
+        
+    if t is not None: objInfo.position = t
+    if r is not None: objInfo.rotation = r
+    if s is not None: objInfo.scale = s
+    pasteFromObjectInfoList([objInfo,])
 
 
 
