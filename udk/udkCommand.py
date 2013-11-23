@@ -43,7 +43,7 @@ def getUnrealTextFromSelection(cut = False):
         copyToClipboard()
     text = pyperclip.getcb()
     if text == "":
-        print "# m2u debug: could not copy to clipboard"
+        #print "# m2u debug: could not copy to clipboard"
         return None
     return text
 
@@ -251,8 +251,12 @@ def renameObject(name, newName):
     to the object in the Program, informing the user that he must enter another
     name etc.
 
-    .. note: UDK will always use the given name, even if an object already has
-    that name, as long as the name is valid. The old object will lose it's
+    You may use the function :func:`getFreeName` to find a name that is unused
+    in UDK prior to actually trying to rename the object. You should still
+    check the returned value.
+
+    .. warning: UDK will always use the given name, even if an object already
+    has that name, as long as the name is valid. The old object will lose it's
     name.
 
     To make sure other objects don't lose their name, we will first ask
@@ -263,6 +267,8 @@ def renameObject(name, newName):
     
     .. note: UDK seems to have a very non-restrictive name-policy, accepting
     nearly everything you throw at it, although it may break stuff!
+
+    .. seealso: :func:`getFreeName`
     
     """
     # check if the newName is already taken
@@ -353,7 +359,7 @@ def duplicateObject(name, dupName, t=None, r=None, s=None):
     fitting name and assign it to the duplicated object using the
     :func:`renameObject` function with the returned string as name.
 
-    .. seealso: :func:`renameObject`
+    .. seealso: :func:`renameObject` :func:`getFreeName`
 
     """
     # TODO: this function is very similar to renameObject, maybe common
@@ -438,4 +444,46 @@ def transformObject(objName, t=None, r=None, s=None):
     pasteFromObjectInfoList([objInfo,])
 
 
+def getFreeName(name):
+    """ check if the name is in use, if it is, return the next
+    unused name by increasing (or adding) the number-suffix
 
+    :return: string, name that is free
+    
+    """
+    # check if the name is still free
+    selectByName(name)
+    unrtext = getUnrealTextFromSelection(False)
+    if unrtext is None:
+        print "name %s is free" % name
+        return name
+    # name was not free, so we need to create a new one and check again
+    print "name: %s is not free" % name
+    
+    # split name into name and suffix
+    #print "type of name: " + str(type(name))
+    g = re.match("(.+?)(\d*)$",str(name))
+    #print "g groups is: " + str(g.groups())
+    rawName = g.group(1)
+    #print "rawName: "+rawName
+    hasSuffix = len(g.group(2))>0
+    #print "suffix: "+g.group(2)
+    suffix = int(g.group(2)) if hasSuffix else 0
+
+    iters = 0
+    while True:
+        # increase suffix and check if that newName is already taken
+        suffix += 1
+        iters += 1
+        newName = rawName + str(suffix)
+        print "udk checking "+newName
+        deselectAll() # make sure really NOTHING is selected, sometimes shit happens
+        selectByName(newName)
+        unrtext = getUnrealTextFromSelection(False)
+        if unrtext is None:
+            # name is free
+            return newName
+        # name is not free, continue loop until a name is found ;)
+        if iters >500:
+            print "tried 1/2k iterations, could not find a name, cancelling"
+            return None

@@ -70,9 +70,10 @@ deselectAll = _s.deselectAll
 # -- editing --
 transformObject = _a.transformObject
 deleteSelected = _a.deleteSelected
-duplicateSelected = _a.duplicateSelected
+#duplicateSelected = _a.duplicateSelected
 renameObject = _a.renameObject
 #insertNewObject = _a.insertNewObject
+duplicateObject = _a.duplicateObject
 
 # -- Visibility --
 hideSelected = _v.hideSelected
@@ -86,3 +87,4 @@ transformCamera = _c.setCamera
 # -- Other --
 undo = _c.undo
 redo = _c.redo
+getFreeName = _c.getFreeName

@@ -13,6 +13,8 @@ from m2u.helper.ObjectInfo import ObjectInfo
 def unrTextFromObjects(objInfoList):
     """ create UnrealText from the provided list of ObjectInfos
     """
+    if len(objInfoList) == 0:
+        return ""
     text = "Begin Map\n Begin Level\n"
     for obj in objInfoList:
         text += (unrTextFromOject(obj)+"\n")

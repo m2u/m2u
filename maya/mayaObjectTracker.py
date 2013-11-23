@@ -22,6 +22,10 @@ Since the path to this module may change, it is easier to get the
 real path at runtime instead of hardcoding something.
 """
 
+############################
+# tracking setup functions #
+############################
+
 __bObjectSync = False
 def setObjectSyncing( sync ):
     global __bObjectSync
@@ -36,11 +40,17 @@ def isObjectSyncing():
 
 
 _onSelectionChangedCBid = None
-
+_onBeforeDuplicateCBid = None
+_onAfterDuplicateCBid = None
 def createObjectTracker():
     global _onSelectionChangedCBid
     _onSelectionChangedCBid = mapi.MEventMessage.addEventCallback(
         "SelectionChanged", _onSelectionChangedCB)
+    global _onBeforeDuplicateCBid, _onAfterDuplicateCBid
+    _onBeforeDuplicateCBid = mapi.MModelMessage.addBeforeDuplicateCallback(
+        _onBeforeDuplicateCB)
+    _onAfterDuplicateCBid = mapi.MModelMessage.addAfterDuplicateCallback(
+        _onAfterDuplicateCB)
 
 def deleteObjectTracker():
     global _onSelectionChangedCBid
@@ -48,6 +58,18 @@ def deleteObjectTracker():
         _deleteObjectSJs()
         mapi.MEventMessage.removeCallback(_onSelectionChangedCBid)
         _onSelectionChangedCBid = None
+    
+    global _onAfterDuplicateCBid, _onBeforeDuplicateCBid
+    if _onAfterDuplicateCBid is not None:
+        mapi.MMessage.removeCallback(_onAfterDuplicateCBid)
+        mapi.MMessage.removeCallback(_onBeforeDuplicateCBid)
+        _onAfterDuplicateCBid = None
+        _onBeforeDuplicateCBid = None
+
+
+#########################
+# convenience functions #
+#########################
 
 def getTransformationFromObj(obj):
     """ get three float tuples for translate, rotate and scale of the object
@@ -56,7 +78,7 @@ def getTransformationFromObj(obj):
     :return: three float tuples for t, r and s
     
     This was initially inside the script job, but it is needed for the
-    camera script job too.
+    camera script job and duplicate callback too.
 
     TODO:
     This function should automatically consider the correct swizzling and
@@ -93,10 +115,16 @@ def getTransformationFromObj(obj):
     
     return ((tx,ty,tz), (rx,ry,rz), (sx,sy,sz))
 
+
+###########################
+# transformation tracking #
+###########################
+
 def onObjectChangedSJ(obj):
     t,r,s = __thismodule.getTransformationFromObj(obj)
     m2u.core.getEditor().transformObject(obj, t, r, s)
     #m2u.core.getEditor().transformObject(obj,(tx,ty,tz),(rx,ry,rz),(sx,sy,sz))
+
 
 _objectScriptJobs = list()
 def _onSelectionChangedCB(data):
@@ -122,3 +150,57 @@ def _deleteObjectSJs():
         #print "deleting sj "+str(sj) 
         pm.scriptJob( kill=sj, force=True)
     _objectScriptJobs[:]=[] #empty the list
+
+
+########################
+# duplication tracking #
+########################
+
+_beforeDupSelection = None
+def _onBeforeDuplicateCB(data):
+    """ save the selection to know which objects are going to be duplicated """
+    global _beforeDupSelection
+    _beforeDupSelection = pm.selected()
+
+def _onAfterDuplicateCB(data):
+    """ go through selection (the duplicated objects), get associated original
+    object from pre duplicate selection and send the pair to the Editor for
+    duplication.
+
+    """
+    print "afterDuplicateCB called"
+    afterDupSel = pm.selected()
+    if len(afterDupSel) != len(_beforeDupSelection):
+        print ("Error: could not sync duplication, originals and results "
+               "lists are of different lengths")
+        return
+    reselectNamesList = list()
+    for old, new in zip(_beforeDupSelection, afterDupSel):
+        t,r,s = getTransformationFromObj(new)
+        # now get an unused name from udk
+        # if the names mismatch, we need to rename the object in maya
+        # the name maya actually assigns to the object may differ again
+        # so we need to do this until maya and udk use the same name
+        mName = str(new)
+        uName = ""
+        while True:
+            uName = m2u.core.getEditor().getFreeName(mName)
+            print "udk returned: "+uName
+            if uName is None: return
+            if uName != mName:
+                print "debug: name already in use, need to find a new one."
+                mName = str(pm.rename(mName, uName))
+            if uName == mName: # no else, because mName may have changed
+                break
+        m2u.core.getEditor().duplicateObject(str(old), uName, t, r, s)
+        # TODO: maybe check the return value of duplicateObject call
+        # since we changed the name, we need to select the renamed object or
+        # the user will get a MayaNodeError when trying to move the duplicates
+        # also subsequent duplicates may depend on a correct selection list
+        reselectNamesList.append(mName)
+
+        # select waehrend duplicate aufrufen killt den transform wert fuer smart
+        # stattdessen muesste entweder ein reselect nach allen duplicates sein
+        # ob das geht? oder rename erst nach dem die duplicates erledigt sind
+        # duerfte mit dem duplicate callback aber auch problematisch sein
+    #pm.select(reselectNamesList, r=True)
