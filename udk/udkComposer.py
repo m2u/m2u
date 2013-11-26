@@ -54,8 +54,11 @@ def transToText(t):
     return "Location=(X=%f,Y=%f,Z=%f)" % t
 
 def rotToText(t):
-    """ converts a rotation tuple to unr text """
-    return "Rotation=(Pitch=%f,Yaw=%f,Roll=%f)" % t
+    """ converts a rotation tuple to unr text
+    .. note: rotation is only integer in udk. If we would pass floats
+    everything after the first dot would be ignored.
+    """
+    return "Rotation=(Pitch=%d,Yaw=%d,Roll=%d)" % t
 
 def scaleToText(t):
     """ converts a scaling tuple to unr text """
@@ -72,8 +75,8 @@ def _convertRotationToUDK(rotTuple):
     return newrot
 
 
-def createNewStaticMeshText(objInfo):
-    """ return the unreal text for a static mesh from a raw objInfo
+def createNewActorText(objInfo):
+    """ return the unreal text for an actor from a raw objInfo
     the information `'Mesh':string` has to be given in the attrs dict
     to be converted into the StaticMeshComponent
 

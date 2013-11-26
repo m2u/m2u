@@ -265,25 +265,26 @@ def renameObject(name, newName):
     still check if the name we wanted to assign actually ended up that way
     in UDK.
     
-    .. note: UDK seems to have a very non-restrictive name-policy, accepting
+    .. warning: UDK seems to have a very non-restrictive name-policy, accepting
     nearly everything you throw at it, although it may break stuff!
 
     .. seealso: :func:`getFreeName`
     
     """
+    # check if the object we want to rename exists
+    selectByName(name) 
+    unrtext = getUnrealTextFromSelection(True)
+    if unrtext is None:
+        print "Error: no object with name '%s' exists" % name
+        # TODO: this maybe should not print an error, maybe a warning or only debug?
+        return (False, None)
+    
     # check if the newName is already taken
     selectByName(newName)
     unrtext = getUnrealTextFromSelection(False)
     if unrtext is not None:
         print "Error: name '%s' already taken" % newName
         return (False,None)
-    
-    # check if the object we want to rename exists
-    selectByName(name) 
-    unrtext = getUnrealTextFromSelection(True)
-    if unrtext is None:
-        print "Error: no object with name '%s' exists" % name
-        return (False, None)
     
     # change name and paste back to Udk
     objInfo = udkParser.parseActor(unrtext)
@@ -364,13 +365,17 @@ def duplicateObject(name, dupName, t=None, r=None, s=None):
     """
     # TODO: this function is very similar to renameObject, maybe common
     # functionality can be delegated to a common function
-    
-    # check if the newName is already taken
-    selectByName(dupName)
-    unrtext = getUnrealTextFromSelection(False)
-    if unrtext is not None:
-        print "Error: name '%s' already taken" % dupName
-        return (2,None)
+
+    # TODO: make checking for old object and free name optional, because
+    # this should be handled inside the program before actually calling
+    # this function (because they search for a free name anyway)
+    # or should they stupidly call this function and make use of the return code
+    # instead? (means call getFreeName in here and return that name to the caller)
+    # renameObject(name, newName, bSecure = True, bGetBestNameIfNoFit = True)
+    #  bSecure = check if name is unused
+    #  bGetBestNameblah = let udk find an unused name
+    # checking if an object exists in the Program function would be bad, because
+    # it creates an unnecessary overhead as we have to "get" the object here anyway
     
     # check if the object we want to duplicate exists
     objInfo = getObjectInfoFromName(name)
@@ -378,6 +383,13 @@ def duplicateObject(name, dupName, t=None, r=None, s=None):
         print "Error: Duplication failed, original object could not be found."
         return (1,None)
         
+    # check if the newName is already taken
+    selectByName(dupName)
+    unrtext = getUnrealTextFromSelection(False)
+    if unrtext is not None:
+        print "Error: name '%s' already taken" % dupName
+        return (2,None)
+    
     objInfo.name = dupName
     if t is not None: objInfo.position = t
     if r is not None: objInfo.rotation = r
@@ -444,10 +456,12 @@ def transformObject(objName, t=None, r=None, s=None):
     pasteFromObjectInfoList([objInfo,])
 
 
-def getFreeName(name):
+def getFreeName(name, maxIters = 5000):
     """ check if the name is in use, if it is, return the next
     unused name by increasing (or adding) the number-suffix
 
+    :param name: the basic name, to check
+    :param maxIters: the maximum number of name-checks to perform
     :return: string, name that is free
     
     """
@@ -461,13 +475,9 @@ def getFreeName(name):
     print "name: %s is not free" % name
     
     # split name into name and suffix
-    #print "type of name: " + str(type(name))
     g = re.match("(.+?)(\d*)$",str(name))
-    #print "g groups is: " + str(g.groups())
     rawName = g.group(1)
-    #print "rawName: "+rawName
     hasSuffix = len(g.group(2))>0
-    #print "suffix: "+g.group(2)
     suffix = int(g.group(2)) if hasSuffix else 0
 
     iters = 0
@@ -484,6 +494,6 @@ def getFreeName(name):
             # name is free
             return newName
         # name is not free, continue loop until a name is found ;)
-        if iters >500:
-            print "tried 1/2k iterations, could not find a name, cancelling"
+        if iters > maxIters:
+            print "tried %d iterations, could not find a name, cancelling" % iters
             return None

@@ -57,9 +57,6 @@ like `CollisionComponent` of the Actor too.)
 
 """
 
-#TODO: what about differentiating objects like meshes and lights?
-# maybe a commonobjType and a internalObjectType or so
-
 import re
 
 from m2u.helper.ObjectInfo import ObjectInfo
