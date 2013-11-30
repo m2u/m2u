@@ -3,6 +3,7 @@
 commands will either be issued by sending console commands to the Editor or by
 activating buttons or menu-items in the Editor-UI.
 see http://udn.epicgames.com/Three/EditorConsoleCommands.html
+and http://udn.epicgames.com/Three/ConsoleCommands.html
 
 Functionality for interaction with the UI is found in :mod:`udkUI`
 
@@ -268,7 +269,7 @@ def renameObject(name, newName):
     .. warning: UDK seems to have a very non-restrictive name-policy, accepting
     nearly everything you throw at it, although it may break stuff!
 
-    .. seealso: :func:`getFreeName`
+    .. seealso:: :func:`getFreeName`
     
     """
     # check if the object we want to rename exists
@@ -360,7 +361,7 @@ def duplicateObject(name, dupName, t=None, r=None, s=None):
     fitting name and assign it to the duplicated object using the
     :func:`renameObject` function with the returned string as name.
 
-    .. seealso: :func:`renameObject` :func:`getFreeName`
+    .. seealso:: :func:`renameObject` :func:`getFreeName`
 
     """
     # TODO: this function is very similar to renameObject, maybe common

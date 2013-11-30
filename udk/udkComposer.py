@@ -55,7 +55,7 @@ def transToText(t):
 
 def rotToText(t):
     """ converts a rotation tuple to unr text
-    .. note: rotation is only integer in udk. If we would pass floats
+    .. note:: rotation is only integer in udk. If we would pass floats
     everything after the first dot would be ignored.
     """
     return "Rotation=(Pitch=%d,Yaw=%d,Roll=%d)" % t

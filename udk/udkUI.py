@@ -56,6 +56,9 @@ WM_SETTEXT = 0x000C
 WM_KEYDOWN = 0x0100
 WM_KEYUP = 0x0101
 WM_CHAR = 0x0102 # the alternative to WM_KEYDOWN
+WM_LBUTTONDOWN = 0x0201 # Left mouse button (click)
+WM_LBUTTONUP = 0x0202 # Left mouse buton (unclick)
+WM_MOUSEMOVE = 0x0200
 VK_RETURN  = 0x0D # Enter key
 VK_F = 0x46 # the F-key (used for export dialog: fbx)
 VK_SELECT = 0x29
@@ -99,10 +102,10 @@ def checkWinZeroReturn(value):
 
 class RECT(ctypes.Structure):
  _fields_ = [
-     ("left", ctypes.c_ulong),
-     ("top", ctypes.c_ulong),
-     ("right", ctypes.c_ulong),
-     ("bottom", ctypes.c_ulong)
+     ("left", ctypes.c_int),
+     ("top", ctypes.c_int),
+     ("right", ctypes.c_int),
+     ("bottom", ctypes.c_int)
  ]
 
 class GUITHREADINFO(ctypes.Structure):
@@ -206,12 +209,16 @@ def _getChildWindowByName(hwnd, lParam):
         print "wnd cls: "+cbuff.value+" name: "+buff.value+" enum: "+str(param._enum)
     return True
 
-def getChildWindowByName(hwnd, name = None, cls = None):
+def getChildWindowByName(hwnd, name=None, cls=None, exact=True, instance=0):
+# TODO: implement exact and instance number checking
     """find a window by its name or clsName, returns the window's hwnd
     
     :param hwnd: the parent window's hwnd
     :param name: the name/title to search for
     :param cls: the clsName to search for
+    :param exact: name/class string has to match (True) or is contained (False)
+    :param instance: make use of this to get the second, third and so on
+        instance of a window.
 
     :return: the hwnd of the matching child window
     
@@ -219,6 +226,13 @@ def getChildWindowByName(hwnd, name = None, cls = None):
     if cls is None, the name is taken,
     if both are None, all elements are printed
     if both have values, only the element matching both will fit.
+
+    the instance parameter is useful if there are more than one window with
+    the same name or class are present and you don't want to have the first
+    instance, but you cannot use :func:`getChildWindowByEnumPos` because the
+    enum is not fixed. 0 and 1 will return the first instance found, 2 will
+    return the second instance found, -1 will return the last instance
+    found etc.
     
     .. seealso:: :func:`_getChildWindowByName`, :func:`getChildWindowByEnumPos`
     
@@ -254,7 +268,8 @@ def getChildWindowByEnumPos(hwnd, pos):
     
     """
     param = ThreadWinLParm(name = None, cls = None, enumPos = pos, _enum = -1)
-    EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByEnumPos), ctypes.byref(param))
+    EnumChildWindows( hwnd, EnumWindowsProc(_getChildWindowByEnumPos),
+                      ctypes.byref(param))
     return param.hwnd
 
     
@@ -577,20 +592,23 @@ def sendEditPaste():
 def callEditCut():
     secureWaitForShiftRelease()
     #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0),0)
-    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0), 0, SMTO_FLAGS, SMTO_TIMEOUT_MS)
+    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCutID,0), 0,
+                           SMTO_FLAGS, SMTO_TIMEOUT_MS)
     #checkWinZeroReturn(v)
 
 def callEditCopy():
     secureWaitForShiftRelease()
     #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0),0)
-    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0), 0, SMTO_FLAGS, SMTO_TIMEOUT_MS)
+    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuCopyID,0), 0,
+                           SMTO_FLAGS, SMTO_TIMEOUT_MS)
     #checkWinZeroReturn(v)
 
 
 def callEditPaste():
     secureWaitForShiftRelease()
     #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),0)
-    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0), 0, SMTO_FLAGS, SMTO_TIMEOUT_MS)
+    v = SendMessageTimeout(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuPasteID,0),
+                           0, SMTO_FLAGS, SMTO_TIMEOUT_MS)
     #checkWinZeroReturn(v)
 
 def callEditDuplicate():
@@ -691,3 +709,39 @@ def secureWaitForShiftRelease():
         time.sleep(0.01)
         if not isShiftDown():
             return
+
+
+def clickInWindowAtPos(hwnd, x, y):
+    """ will send a mouse click at x,y to the specified hwnd.
+    the position is relative to upper-left corner of client area.
+    """
+    SendMessage(hwnd, WM_LBUTTONDOWN, 0, MAKELPARAM(x,y))
+
+def callImportContent():
+    """ click the 'Import' button in the Content Browser
+    """
+    # TODO: maybe move the "find the window" stuff to an initialize function
+    # that is called once at startup
+    # TODO: call show Content Browser to make sure the window can be found
+    contentBrowser = getThreadWindowByName(gUDKThreadProcessID,
+                                           name = "Content Browser")
+    #contentBrowser = getChildWindowByName(contentBrowser,
+    #                                      name = "ContentBrowserHost")
+    rect = RECT()
+    ctypes.windll.user32.GetWindowRect(contentBrowser, ctypes.byref(rect))
+    print ("rect = "+str(rect.top)+" "+str(rect.left)+" "+
+           str(rect.bottom)+" "+str(rect.right))
+    # clicking is relative to client area top-left, while getting window
+    # dimensions is relative to screen top-left
+    xc = 178 # from left
+    yc = rect.bottom - rect.top - 28 # from lower bound
+    x = rect.left + 178
+    y = rect.bottom - 28
+    #SendMessage(contentBrowser, WM_LBUTTONDOWN, 0, MAKELPARAM(x,y))
+    #SendMessage(contentBrowser, WM_LBUTTONUP, 0, MAKELPARAM(x,y))
+    #SendMessage(0, WM_MOUSEMOVE, 0, MAKELPARAM(x,y))
+    ctypes.windll.user32.SetCursorPos(x,y)
+    #SendMessage(0, WM_LBUTTONDOWN, 0, MAKELPARAM(x,y))
+    #SendMessage(0, WM_LBUTTONUP, 0, MAKELPARAM(x,y))
+    SendMessage(contentBrowser, WM_LBUTTONDOWN, 0, MAKELPARAM(x,y))
+    SendMessage(contentBrowser, WM_LBUTTONUP, MAKEWPARAM(0x0001,0), MAKELPARAM(x,y))
