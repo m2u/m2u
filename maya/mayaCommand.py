@@ -32,6 +32,7 @@ def translationMayaToUDK(t):
     tx,ty,tz = t
     return -tz,tx,ty #maya y-up
     #return tx,-ty,tz #maya z-up
+    #return tx,tz,ty #maya y-up to udk-fbx-z-up?
 
 """callbacks
 playback sync stuff?
@@ -72,6 +73,51 @@ def fetchSelectedObjectsFromEditor():
     
     cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
     pm.mel.eval(cmd)
+
+
+def exportObjectForGame(name, path):
+    """ export object `name` to FBX file specified by `path`
+    and edit/add the `MeshSignature` attribute accordingly.
+
+    """
+
+def exportObjectCentered(name, path, center=True):
+    """ export object `name` to FBX file specified by `path`
+    
+    :param name: objects name
+    :param path: file path for the fbx file
+    :param center: object transformation will be reset before export
+
+    """
+    ed = m2u.core.getEditor()
+    wasSyncing = ed.isObjectSyncing()
+    ed.setObjectSyncing(False) # so our move command won't be reflected in Ed
+    
+    pm.select(name, r=True)
+    mat = pm.xform(query=True, ws=True, m=True) # backup matrix
+    if center:
+        pm.xform(a=True, ws=True, t=(0,0,0), ro=(0,0,0), s=(1,1,1))
+    
+    exportSelectedToFBX(path)
+    
+    if center:
+        pm.xform( a=True, ws=True, m=mat) # reset matrix
+    
+    ed.setObjectSyncing(wasSyncing) # restore syncing state
+    
+    
+    
+def exportSelectedToFBX(path):
+    """ export selection to file specified by `path`
+
+    fbx settings will be set from `fbxSettings` preset file
+    """
+    if os.path.exists(path):
+        os.remove(path) 
+    lsfpath = ""
+    lsfcmd = "FBXLoadExportPresetFile -f %s"
+    expcmd = "FBXExport -f \"%s\" -s" % path.replace("\\","\\\\")
+
 
 
 def printWarning(s):

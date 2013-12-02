@@ -30,6 +30,9 @@ def cbFetchSelected(*args):
     # this is circumventing the interface
     m2u.maya.mayaCommand.fetchSelectedObjectsFromEditor()
 
+def cbUDKImportContent(*args):
+    m2u.udk.udkUI.callImportContent("C:\\temp\\mp7_compact_export.fbx",None)
+
 def createUI():
     v = m2u.getVersion()
     m2uwin = pm.window( title="m2u "+v+" (maya)", iconName='m2u',
@@ -45,5 +48,6 @@ def createUI():
                  ofc = cbSyncObjectsOff, v = False)
     pm.separator()
     pm.button( label='Fetch Selected', c = cbFetchSelected)
+    pm.button( label='Import Content Test', c = cbUDKImportContent)
     pm.setParent( '..' )
     pm.showWindow( m2uwin )
