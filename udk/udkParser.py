@@ -62,6 +62,9 @@ import re
 from m2u.helper.ObjectInfo import ObjectInfo
 from m2u.udk.udkTypes import getCommonTypeFromInternal
 
+import m2u.logger as _logger
+_lg = _logger.getLogger(__name__)
+
 def parseActors(unrtext):
     """ parse UnrealText and return a list of ObjectInfos of the Actors in
     the Level.
@@ -114,7 +117,7 @@ def parseActor(unrtext, safe=False):
                 break
     g = re.search("Class=(.+?) Name=(.+?)\s+", lines[sindex])
     if not g: # no name? invalid text, obviously
-        print "no name and type found for object"
+        _lg.error( "no name and type found for object")
         return None
     objtype = g.group(1)
     objname = g.group(2)

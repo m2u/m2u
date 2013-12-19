@@ -6,6 +6,11 @@ import ctypes #required for windows ui stuff
 import time
 import threading
 
+from . import udkWinInput
+
+import m2u.logger as _logger
+_lg = _logger.getLogger(__name__)
+
 # UI element window handles
 gUDKThreadProcessID = None # the UI-thread of UDK
 gMainWindow = None # the udk window
@@ -319,7 +324,8 @@ def attachThreads(hwnd):
     global gUDKThreadProcessID
     gUDKThreadProcessID = thread
     thisThread = threading.current_thread().ident #program thread
-    print "# m2u: Attaching threads",thread,"and",thisThread
+    #print "# m2u: Attaching threads",thread,"and",thisThread
+    _lg.info("Attaching threads " + str(thread) + " and " + str(thisThread))
     AttachThreadInput(thread, thisThread, True)
 
 def detachThreads():
@@ -342,7 +348,8 @@ def _getWindows(hwnd, lParam):
         #    thread = GetWindowThreadProcessId(hwnd, 0)
         #    print "maya thread:",thread
         if "Unreal Development Kit" in buff.value:
-            print "# m2u: Found UDK"
+            #print "# m2u: Found UDK"
+            _lg.info("Found UDK")
             global gMainWindow, gUDKThreadProcessID
             gMainWindow = hwnd
             #thread = GetWindowThreadProcessId(hwnd, 0) #udk thread
@@ -407,7 +414,8 @@ def connectToUEd():
     global gMainWindow
     EnumWindows(EnumWindowsProc(_getWindows), 0)
     if gMainWindow is None:
-        print "# m2u: No UDK instance found."
+        #print "# m2u: No UDK instance found."
+        _lg.error("No UDK instance found.")
     return (gMainWindow is not None)
 
 def getThreadWindowByName(thread, name = None, cls = None):
@@ -443,7 +451,7 @@ def fireCommand(command):
     #PostMessage(gCommandField, WM_KEYDOWN, VK_RETURN, 0)
     # VK_RETURN with WM_KEYDOWN didn't work from within maya, use WM_CHAR instead...
 
-def callExportSelected(filePath, withTextures):
+def _callExportSelected_old(filePath, withTextures):
     """
     calls the menu entry for export selected,
     enters the file path and answers the popup dialogs
@@ -607,7 +615,6 @@ def restoreModifierKeyState():
         print "shift downed successfull?",shiftis
         sys.stdout.flush()
 
-import udkWinInput
 def sendEditCut():
     print "sending edit cut"
     SetFocus(gMainWindow)
@@ -846,3 +853,47 @@ def callImportContent(filePath, packagePath):
     SetFocus(okBtn)
     t_enter = ((VK_RETURN,2),(VK_RETURN,0),(VK_RETURN,2))
     udkWinInput.sendInput(t_enter)
+
+def callExportSelected(filePath, withTextures=False):
+    """
+    calls the menu entry for export selected,
+    enters the file path and answers the popup dialogs
+
+    withTextures is currently ignored, as FBX has not that option
+
+    this new version should be secure to not cause thread-locking
+    """
+    detachThreads() # ! do not block ui-creation in udk
+    #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
+    PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
+    time.sleep(0.1) # HACK: wait a little so all ui elements may already be there
+    exportDlg = getChildWindowByName(gUDKThreadProcessID, name="Export",
+                                     hwndIsThread = True, loops = 50)
+    if exportDlg is None:
+        _lg.error("Export Dialog could not be retrieved")
+        attachThreads(gMainWindow) # !
+        return False
+    
+    edit = getChildWindowByName(exportDlg, cls="Edit", loops=50)
+    if edit is None:
+        _lg.error("Filename field could not be retrieved")
+        attachThreads(gMainWindow) # !
+        return False
+
+    time.sleep(0.1)
+    ftcombo = GetNextDlgTabItem(exportDlg, edit, False) #1 filetype combo box
+    if ftcombo is None:
+        _lg.error("Filetype field could not be retrieved")
+        attachThreads(gMainWindow) # !
+        return False
+    
+    attachThreads(gMainWindow) # !
+    #attachThreads(exportDlg) # !
+    SetFocus(exportDlg)
+    SendMessage(edit, WM_SETTEXT, 0, str(filePath))
+    SetFocus(ftcombo)
+    SendMessage(ftcombo, WM_CHAR, VK_F, 0) # send "F" to set to FBX
+    
+    SetFocus(exportDlg)
+    SendMessage(exportDlg, WM_COMMAND, MAKEWPARAM(IDOK,0), 0)
+    return True

@@ -1,6 +1,6 @@
 # maya commands, will maybe divided into several files, we will see
 
-print "maya command importing"
+#print "maya command importing"
 
 import time
 import os
@@ -10,6 +10,9 @@ import pymel.api as mapi
 
 import m2u
 import m2u.helper as helper
+
+import m2u.logger as _logger
+_lg = _logger.getLogger(__name__)
 
 RADIAN_TO_DEGR = 57.2957795
 DEGR_TO_RADIAN = 0.0174532925
@@ -79,7 +82,21 @@ def exportObjectForGame(name, path):
     """ export object `name` to FBX file specified by `path`
     and edit/add the `MeshSignature` attribute accordingly.
 
+    if a `MeshSignature` attribute is found and is not empty,
+    that name will be presented to the user n shit
+    then the user can decide how to change the name (the signature)
+    the path will actually be created from the signature, based on the
+    project base directory that should be specified in the "pipeline"
+    settings of m2u, if nothing is set there, the TEMP folder should be used
+    then may check the already existing files in the directory and increase
+    a suffix on the meshname to create a unique new one, and present that to
+    the user?
+
     """
+    pm.addAttr(longName="MeshSignature", dataType="string", keyable=False)
+    obj=pm.selected()[0]
+    attr = pm.getAttr(obj.name()+".MeshSignature")
+    print attr
 
 def exportObjectCentered(name, path, center=True):
     """ export object `name` to FBX file specified by `path`

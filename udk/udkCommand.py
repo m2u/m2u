@@ -21,6 +21,9 @@ from m2u.udk import udkUI
 from m2u.udk import udkParser
 from m2u.udk import udkComposer
 
+import m2u.logger as _logger
+_lg = _logger.getLogger(__name__)
+
 ###########################
 # #-- helper functions -- #
 ###########################
@@ -276,7 +279,8 @@ def renameObject(name, newName):
     selectByName(name) 
     unrtext = getUnrealTextFromSelection(True)
     if unrtext is None:
-        print "Error: no object with name '%s' exists" % name
+        #print "Error: no object with name '%s' exists" % name
+        _lg.error(("No object with name '%s' exists" % name))
         # TODO: this maybe should not print an error, maybe a warning or only debug?
         return (False, None)
     
@@ -284,7 +288,8 @@ def renameObject(name, newName):
     selectByName(newName)
     unrtext = getUnrealTextFromSelection(False)
     if unrtext is not None:
-        print "Error: name '%s' already taken" % newName
+        #print "Error: name '%s' already taken" % newName
+        _lg.error("Name '%s' already taken" % newName)
         return (False,None)
     
     # change name and paste back to Udk
@@ -298,7 +303,8 @@ def renameObject(name, newName):
     # note: udk auto-selects newly pasted objects for us.
     chktext = getUnrealTextFromSelection(False)
     if chktext is None:
-        print "Error: pasting renamed object failed"
+        #print "Error: pasting renamed object failed"
+        _lg.error("Pasting renamed object failed")
         # TODO: we might try to paste back the initally cutted object here
         # or let the user hit undo?
         return (False,None)
@@ -309,7 +315,7 @@ def renameObject(name, newName):
         return (True,None)
     else:
         # the object was renamed! but the editor changed the name...
-        print ("Warning: rename returned a different name than desired "
+        _lg.warn("Rename returned a different name than desired "
                "('%s' instead of '%s')." % (chkObj.name, newName))
         return (False, chkObj.name)
 
@@ -381,14 +387,16 @@ def duplicateObject(name, dupName, t=None, r=None, s=None):
     # check if the object we want to duplicate exists
     objInfo = getObjectInfoFromName(name)
     if objInfo is None:
-        print "Error: Duplication failed, original object could not be found."
+        #print "Error: Duplication failed, original object could not be found."
+        _lg.error("Duplication failed, original object could not be found.")
         return (1,None)
         
     # check if the newName is already taken
     selectByName(dupName)
     unrtext = getUnrealTextFromSelection(False)
     if unrtext is not None:
-        print "Error: name '%s' already taken" % dupName
+        #print "Error: name '%s' already taken" % dupName
+        _lg.error("Name '%s' already taken" % dupName)
         return (2,None)
     
     objInfo.name = dupName
@@ -403,7 +411,8 @@ def duplicateObject(name, dupName, t=None, r=None, s=None):
     # note: udk auto-selects newly pasted objects for us.
     chktext = getUnrealTextFromSelection(False)
     if chktext is None:
-        print "Error: pasting new object failed"
+        #print "Error: pasting new object failed"
+        _lg.error("Pasting new object failed")
         # TODO: we might try to paste back the initally cutted object here
         # or let the user hit undo?
         return (4,None)
@@ -414,7 +423,7 @@ def duplicateObject(name, dupName, t=None, r=None, s=None):
         return (0,None)
     else:
         # the object was renamed! but the editor changed the name...
-        print ("Warning: editor returned a different name than desired "
+        _lg.warn("Editor returned a different name than desired "
                "('%s' instead of '%s')." % (chkObj.name, dupName))
         return (3, chkObj.name)
 
@@ -470,10 +479,10 @@ def getFreeName(name, maxIters = 5000):
     selectByName(name)
     unrtext = getUnrealTextFromSelection(False)
     if unrtext is None:
-        print "name %s is free" % name
+        _lg.debug("name %s is free" % name)
         return name
     # name was not free, so we need to create a new one and check again
-    print "name: %s is not free" % name
+    _lg.debug("name: %s is not free" % name)
     
     # split name into name and suffix
     g = re.match("(.+?)(\d*)$",str(name))
@@ -487,7 +496,7 @@ def getFreeName(name, maxIters = 5000):
         suffix += 1
         iters += 1
         newName = rawName + str(suffix)
-        print "udk checking "+newName
+        _lg.debug("udk checking "+newName)
         deselectAll() # make sure really NOTHING is selected, sometimes shit happens
         selectByName(newName)
         unrtext = getUnrealTextFromSelection(False)
@@ -496,5 +505,6 @@ def getFreeName(name, maxIters = 5000):
             return newName
         # name is not free, continue loop until a name is found ;)
         if iters > maxIters:
-            print "tried %d iterations, could not find a name, cancelling" % iters
+            _lg.error("tried %d iterations, could not find a name, cancelling"
+                      % iters )
             return None

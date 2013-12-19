@@ -10,6 +10,8 @@ module by calling :func:`getProgram` and :func:`getEditor`.
 
 import os
 import m2u
+import m2u.logger
+_lg = m2u.logger.getLogger(__name__)
 
 def getTempFolder():
     #this function may be changed to return a user-defined folder
@@ -43,9 +45,9 @@ def _initProgram(programName):
         #_program = __import__("m2u."+programName)
         _program = __import__('m2u.'+programName, globals(), locals(),
                               ["__name__"], -1)
-        print "program is "+_program.__name__
+        _lg.info( "Program module is `"+_program.__name__+"`")
     except ImportError:
-        print "Unable to import program module %s" % (programName,)
+        _lg.error("Unable to import program module %s" % (programName,))
 
 def _initEditor(editorName):
     """load the module for the editor"""

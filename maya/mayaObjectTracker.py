@@ -181,11 +181,11 @@ def _onAfterDuplicateCB(data):
     duplication.
 
     """
-    print "afterDuplicateCB called"
+    #print "afterDuplicateCB called"
     afterDupSel = pm.selected()
     if len(afterDupSel) != len(_beforeDupSelection):
-        print ("Error: could not sync duplication, originals and results "
-               "lists are of different lengths")
+        _lg.error(("could not sync duplication, originals and results "
+                  "lists are of different lengths"))
         return
     reselectNamesList = list()
     for old, new in zip(_beforeDupSelection, afterDupSel):
@@ -199,10 +199,10 @@ def _onAfterDuplicateCB(data):
         uName = ""
         while True:
             uName = m2u.core.getEditor().getFreeName(mName)
-            print "udk returned: "+uName
+            _lg.debug("udk returned: "+uName)
             if uName is None: return
             if uName != mName:
-                print "debug: name already in use, need to find a new one."
+                _lg.debug("name already in use, need to find a new one.")
                 mName = str(pm.rename(mName, uName))
             if uName == mName: # no else, because mName may have changed
                 break
@@ -232,7 +232,7 @@ def _onNameChangedCB(node, prevName, data):
     newName = str(mfnnode.name())
     if "#" in newName: # those are only temporary name changes to create numbers
         return
-    print "maya changed name to %s" % newName
+    _lg.debug("maya changed name to %s" % newName)
     #print "type is %s" % typeName
     m2u.core.getEditor().renameObject(prevName, newName)
     # TODO: handle return code of renameObject appropriately 
