@@ -11,7 +11,7 @@ import pymel.api as mapi
 import m2u
 import m2u.helper as helper
 
-import m2u.logger as _logger
+from m2u import logger as _logger
 _lg = _logger.getLogger(__name__)
 
 RADIAN_TO_DEGR = 57.2957795

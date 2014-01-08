@@ -10,12 +10,23 @@ module by calling :func:`getProgram` and :func:`getEditor`.
 
 import os
 import m2u
-import m2u.logger
-_lg = m2u.logger.getLogger(__name__)
+from m2u import logger as _logger
+_lg = _logger.getLogger(__name__)
+import m2u.settings as settings
 
 def getTempFolder():
-    #this function may be changed to return a user-defined folder
-    return os.getenv("TEMP")
+    p = settings.getAndSetValueDefaultIfError("General","Tempdir",
+                                              os.getenv("TEMP"), False)
+    return p
+
+def getProjectBaseDir():
+    """ get the base directory for content of the current user's project
+    folder. Used when exporting and importing mesh-files.
+
+    """
+    # TODO: this is a pipeline task and should be moved to a new file
+    # for common pipeline functionality
+    return getTempFolder()+"/M2UProjBase"
 
 _program = None
 _editor = None

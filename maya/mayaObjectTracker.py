@@ -14,6 +14,9 @@ import pymel.api as mapi
 
 import m2u
 
+from m2u import logger as _logger
+_lg = _logger.getLogger(__name__)
+
 import sys
 __thismodule = sys.modules[__name__]
 """this is required because the script jobs are in mayas namespace,

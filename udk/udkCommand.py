@@ -21,7 +21,7 @@ from m2u.udk import udkUI
 from m2u.udk import udkParser
 from m2u.udk import udkComposer
 
-import m2u.logger as _logger
+from m2u import logger as _logger
 _lg = _logger.getLogger(__name__)
 
 ###########################

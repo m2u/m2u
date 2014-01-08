@@ -8,7 +8,7 @@ import threading
 
 from . import udkWinInput
 
-import m2u.logger as _logger
+from m2u import logger as _logger
 _lg = _logger.getLogger(__name__)
 
 # UI element window handles

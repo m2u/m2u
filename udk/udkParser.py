@@ -62,7 +62,7 @@ import re
 from m2u.helper.ObjectInfo import ObjectInfo
 from m2u.udk.udkTypes import getCommonTypeFromInternal
 
-import m2u.logger as _logger
+from m2u import logger as _logger
 _lg = _logger.getLogger(__name__)
 
 def parseActors(unrtext):

@@ -20,7 +20,7 @@ be ignored completely. But when a new Object is created in the Program and sent
 to UDK, the translator needs to know what kind of object to create in UDK.
 
 """
-import m2u.logger as _logger
+from m2u import logger as _logger
 _lg = _logger.getLogger(__name__)
 
 internalTypeToCommonType={
