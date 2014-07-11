@@ -62,27 +62,35 @@ def fetchSelectedObjectsFromEditor():
     and then maya will import that file.
     
     """
-    #path = os.getenv("TEMP")
+    ed = m2u.core.getEditor()
+    prog = m2u.core.getProgram()
     path = m2u.core.getTempFolder()
     path = path + "\m2uTempExport.fbx"
     if os.path.exists(path):
         os.remove(path) # make sure there will be no "overwrite" warning from UEd
     # this is circumventing the interface!
-    m2u.core.getEditor().udkCommand.exportSelectedToFile(path,False)
+    ed.udkCommand.exportSelectedToFile(path,False)
     status = helper.waitForFileToBecomeAvailable(path)
     if not status:
-        pm.error("# m2u: Unable to import file: "+path)
+        _lg.error("Unable to import file: "+path)
         return
+    
+    # disable object tracking, because importing FBX files will cause
+    # a lot of renaming and we don't want that to produce warnings
+    wasSyncing = prog.isObjectSyncing()
+    prog.setObjectSyncing(False)
     
     cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
     pm.mel.eval(cmd)
+    
+    prog.setObjectSyncing(wasSyncing) # restore syncing state
 
 
-def exportObjectForGame(name, path):
+def exportObjectAsAsset(name, path):
     """ export object `name` to FBX file specified by `path`
-    and edit/add the `MeshSignature` attribute accordingly.
+    and edit/add the `MeshPath` attribute accordingly.
 
-    if a `MeshSignature` attribute is found and is not empty,
+    if a `MeshPath` attribute is found and is not empty,
     that name will be presented to the user n shit
     then the user can decide how to change the name (the signature)
     the path will actually be created from the signature, based on the
@@ -93,9 +101,9 @@ def exportObjectForGame(name, path):
     the user?
 
     """
-    pm.addAttr(longName="MeshSignature", dataType="string", keyable=False)
+    pm.addAttr(longName="MeshPath", dataType="string", keyable=False)
     obj=pm.selected()[0]
-    attr = pm.getAttr(obj.name()+".MeshSignature")
+    attr = pm.getAttr(obj.name()+".MeshPath")
     print attr
 
 def exportObjectCentered(name, path, center=True):
@@ -106,9 +114,9 @@ def exportObjectCentered(name, path, center=True):
     :param center: object transformation will be reset before export
 
     """
-    ed = m2u.core.getEditor()
-    wasSyncing = ed.isObjectSyncing()
-    ed.setObjectSyncing(False) # so our move command won't be reflected in Ed
+    prog = m2u.core.getProgram()
+    wasSyncing = prog.isObjectSyncing()
+    prog.setObjectSyncing(False) # so our move command won't be reflected in Ed
     
     pm.select(name, r=True)
     mat = pm.xform(query=True, ws=True, m=True) # backup matrix
@@ -120,7 +128,7 @@ def exportObjectCentered(name, path, center=True):
     if center:
         pm.xform( a=True, ws=True, m=mat) # reset matrix
     
-    ed.setObjectSyncing(wasSyncing) # restore syncing state
+    prog.setObjectSyncing(wasSyncing) # restore syncing state
     
     
     
@@ -131,7 +139,7 @@ def exportSelectedToFBX(path):
     """
     if os.path.exists(path):
         os.remove(path) 
-    lsfpath = ""
+    sfpath = m2u.core.getM2uBasePath()+"/fbxExportPreset.cfg"
     lsfcmd = "FBXLoadExportPresetFile -f %s"
     expcmd = "FBXExport -f \"%s\" -s" % path.replace("\\","\\\\")
 

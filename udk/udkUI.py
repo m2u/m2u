@@ -866,7 +866,7 @@ def callExportSelected(filePath, withTextures=False):
     detachThreads() # ! do not block ui-creation in udk
     #SendMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
     PostMessage(gMainWindow, WM_COMMAND, MAKEWPARAM(gMenuExportID,0),0)
-    time.sleep(0.1) # HACK: wait a little so all ui elements may already be there
+    time.sleep(0.3) # HACK: wait a little so all ui elements may already be there
     exportDlg = getChildWindowByName(gUDKThreadProcessID, name="Export",
                                      hwndIsThread = True, loops = 50)
     if exportDlg is None:
@@ -879,9 +879,10 @@ def callExportSelected(filePath, withTextures=False):
         _lg.error("Filename field could not be retrieved")
         attachThreads(gMainWindow) # !
         return False
-
+    
     time.sleep(0.1)
-    ftcombo = GetNextDlgTabItem(exportDlg, edit, False) #1 filetype combo box
+    #ftcombo = GetNextDlgTabItem(exportDlg, edit, False) #1 filetype combo box
+    ftcombo = getChildWindowByName(exportDlg, cls="ComboBox", loops=50, instance=2) 
     if ftcombo is None:
         _lg.error("Filetype field could not be retrieved")
         attachThreads(gMainWindow) # !

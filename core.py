@@ -19,14 +19,21 @@ def getTempFolder():
                                               os.getenv("TEMP"), False)
     return p
 
-def getProjectBaseDir():
+def getM2uBasePath():
+    """ get the path to the m2u folder (the folder this file is in)
+    """
+    fpath = os.path.abspath(__file__)
+    fdir = os.path.dirname(fpath)
+    return fdir
+
+def getProjectExportDir():
     """ get the base directory for content of the current user's project
     folder. Used when exporting and importing mesh-files.
 
     """
     # TODO: this is a pipeline task and should be moved to a new file
     # for common pipeline functionality
-    return getTempFolder()+"/M2UProjBase"
+    return getTempFolder()+"/m2u_Export"
 
 _program = None
 _editor = None
