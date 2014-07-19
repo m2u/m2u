@@ -50,7 +50,7 @@ def initialize(programName,editorName="udk"):
     """Initializes the whole m2u system.
     
     :param programName: the program to use 'max' or 'maya'
-    :param editorName: the target engine to use currently only 'udk'
+    :param editorName: the target engine to use
     
     """
     _initProgram(programName)
@@ -70,6 +70,10 @@ def _initProgram(programName):
 def _initEditor(editorName):
     """load the module for the editor"""
     global _editor
-    import m2u.udk as udk
-    _editor = udk
+    try:
+        _editor = __import__('m2u.'+editorName, globals(), locals(),
+                              ["__name__"], -1)
+        _lg.info( "Editor module is `"+_editor.__name__+"`")
+    except ImportError:
+        _lg.error("Unable to import editor module %s" % (editorName,))
 
