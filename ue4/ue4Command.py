@@ -39,30 +39,47 @@ def transformCamera( x,y,z, rx,ry,rz, CamIdentifier="All"):
     """
     #TODO: CamIdentifier is not yet used in m2uPlugin, possible values should be:
     #All, AllPersp, AllTop, AllFront, AllSide, or an Index specifying a specific
-    #viewport.
+    #viewport. Or a name for a camera?
     msg = ("TransformCamera %f %f %f %f %f %f %s" % \
            (x,y,z,rx,ry,rz,CamIdentifier))
     ue4Conn.sendMessage(msg)
 
 
 def deleteSelected():
-    pass
+    msg = ("DeleteSelected")
+    ue4Conn.sendMessage(msg)
 
 
 def renameObject(name, newName):
-    pass
+    msg = ("RenameObject %s %s" % (name, newName))
+    ue4Conn.sendMessage(msg)
 
 
 def duplicateObject(name, dupName, t=None, r=None, s=None):
-    pass
+    """duplicate an object with optional transformations
+
+    :param name: name of the object to modify
+    :param dupName: desired name for the duplicate
+    :param t: translation float tuple or None if not to change
+    :param r: rotation float tuple or None if not to change
+    :param s: 3d scale float tuple or None if not to change
+    
+    """
+    T = "" if t is None else ("T=(%f %f %f)" % (t[0], t[1], t[2]))
+    R = "" if r is None else ("R=(%f %f %f)" % (r[0], r[1], r[2]))
+    S = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
+    msg = ("DuplicateObject "+name+" "+dupName+" "+T+" "+R+" "+S)
+    ue4Conn.sendMessage(msg)
 
 
 def undo():
-    pass
+    msg = ("Undo")
+    ue4Conn.sendMessage(msg)
 
 
 def redo():
-    pass
+    msg = ("Redo")
+    ue4Conn.sendMessage(msg)
 
 
 def getFreeName(name, maxIters=5000):
