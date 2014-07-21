@@ -28,15 +28,19 @@ def sendMessage(MESSAGE):
         print "Not connected"
         return
     _s.send(MESSAGE)
+    return _receiveMessage()
+    
 
-def receiveMessage():
+def _receiveMessage():
     if _s is  None:
         print "Not connected"
         return
     BUFFER_SIZE = 1024
     data = _s.recv(BUFFER_SIZE)
-    print "client received data:", data
+    #print "client received data:", data
+    return data
 
 def closeConnection():
+    global _s
     _s.close()
     _s = None
