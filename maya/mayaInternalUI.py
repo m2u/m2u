@@ -28,7 +28,8 @@ def cbSyncObjectsOff(*args):
 
 def cbFetchSelected(*args):
     # this is circumventing the interface
-    m2u.maya.mayaCommand.fetchSelectedObjectsFromEditor()
+    #m2u.maya.mayaCommand.fetchSelectedObjectsFromEditor()
+    m2u.core.getEditor().ue4Export.fetchSelectedObjects()
 
 def cbUDKImportContent(*args):
     m2u.udk.udkUI.callImportContent("C:\\temp\\mp7_compact_export.fbx",None)

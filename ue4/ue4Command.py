@@ -51,8 +51,31 @@ def deleteSelected():
 
 
 def renameObject(name, newName):
+    """try to assign a new name to an object.
+
+    :param name: current name of the object
+    :param newName: desired name for the object
+
+    :return: tuple (bool,string) True if no problem occured, False otherwise
+    if False, the string will be the name the Editor assigned or None if no
+    renaming took place.
+
+    You can use :func:`getFreeName` to find a name that is unused in the
+    Editor prior to actually renaming the object.
+    """
     msg = ("RenameObject %s %s" % (name, newName))
-    ue4Conn.sendMessage(msg)
+    result = ue4Conn.sendMessage(msg)
+    if result =="1":
+        _lg.error(("No object with name '%s' exists" % name))
+        # TODO: this maybe should not print an error, maybe a warning or only debug?
+        return (False, None)
+    if result == newName:
+        return (True, None)
+    else:
+        # the object was (probably) renamed! but the editor changed the name...
+        _lg.warn("Rename returned a different name than desired "
+               "('%s' instead of '%s')." % (result, newName))
+        return (False, result)
 
 
 def duplicateObject(name, dupName, t=None, r=None, s=None):
@@ -63,13 +86,44 @@ def duplicateObject(name, dupName, t=None, r=None, s=None):
     :param t: translation float tuple or None if not to change
     :param r: rotation float tuple or None if not to change
     :param s: 3d scale float tuple or None if not to change
+
+    :return: tuple (int,string) the int will be
+        - 0 if no problem occured
+        - 1 if the original object could not be found
+        - 2 if the name for the duplicate is already taken
+        - 3 if the name was changed by the editor
+        - 4 error, reason unknown
+    Return values 2 and 3 are mutually exclusive by implementation.
+    If 3 is returned, the string will be the name the Editor assigned
+    and None otherwise.
+
+    If the return value is 1 or 2, the calling function should change
+    the name(s) and try again.
+    If the return value is (3,string) the calling function must assign
+    the returned name to the original object in the Program or find a new
+    fitting name and assign it to the duplicated object using the
+    :func:`renameObject` function with the returned string as name.
+
+    .. seealso:: :func:`renameObject` :func:`getFreeName`
     
     """
     T = "" if t is None else ("T=(%f %f %f)" % (t[0], t[1], t[2]))
     R = "" if r is None else ("R=(%f %f %f)" % (r[0], r[1], r[2]))
     S = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
     msg = ("DuplicateObject "+name+" "+dupName+" "+T+" "+R+" "+S)
-    ue4Conn.sendMessage(msg)
+    result = ue4Conn.sendMessage(msg)
+    vals = result.split()
+    rval = int(vals[0])
+    rname = None
+    if len(vals)>1:
+        rname = vals[1]
+        
+    if rval == 1:
+        _lg.error("Duplication failed, original object could not be found.")
+    elif rval == 3:
+        _lg.warn("Editor returned a different name than desired "
+               "('%s' instead of '%s')." % (rname, dupName))
+    return (rval, rname)
 
 
 def undo():
@@ -88,7 +142,11 @@ def getFreeName(name, maxIters=5000):
 
     :param name: the basic name, to check
     :param maxIters: the maximum number of name-checks to perform
+    (maxIters currently not used)
+    
     :return: string, name that is free
     
     """
-    pass
+    msg = ("GetFreeName "+name)
+    result = ue4Conn.sendMessage(msg)
+    return result;

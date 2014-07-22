@@ -54,3 +54,5 @@ setCameraFOV = _cam.setCameraFOV
 setObjectSyncing = _obj.setObjectSyncing
 isObjectSyncing = _obj.isObjectSyncing
 
+# TODO: move to pipeline file or so
+importFile = _cmd.importFile

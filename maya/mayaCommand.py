@@ -57,6 +57,32 @@ alternativ MSceneMessage
 
 """
 
+# TODO: move this function to a program-specific pipeline module
+# maybe it has to be split in one that is m2u specific and one that
+# can be generalized (the importing itself, while still disabling m2u-syncing)
+# on the other hand, if somebody provides his own pipeline for m2u, they
+# should be able to do this from within those functions too.
+def importFile(path):
+    """ simply imports an FBX-file
+    
+    """
+    prog = m2u.core.getProgram()
+    # disable object tracking, because importing FBX files will cause
+    # a lot of renaming and we don't want that to produce warnings
+    wasSyncing = prog.isObjectSyncing()
+    prog.setObjectSyncing(False)
+    
+    cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
+    pm.mel.eval(cmd)
+    
+    prog.setObjectSyncing(wasSyncing) # restore syncing state
+
+
+#def importAsset()
+#def referenceAsset ??
+
+    
+# TODO: remove this function or move to UDK specific file
 def fetchSelectedObjectsFromEditor():
     """ tell UDK to export the selected objects into a temporary FBX file
     and then maya will import that file.
@@ -86,6 +112,7 @@ def fetchSelectedObjectsFromEditor():
     prog.setObjectSyncing(wasSyncing) # restore syncing state
 
 
+# TODO: move to maya-specific pipeline file
 def exportObjectAsAsset(name, path):
     """ export object `name` to FBX file specified by `path`
     and edit/add the `MeshPath` attribute accordingly.
@@ -106,6 +133,7 @@ def exportObjectAsAsset(name, path):
     attr = pm.getAttr(obj.name()+".MeshPath")
     print attr
 
+# TODO: move to maya-specific pipeline-file
 def exportObjectCentered(name, path, center=True):
     """ export object `name` to FBX file specified by `path`
     
@@ -129,9 +157,9 @@ def exportObjectCentered(name, path, center=True):
         pm.xform( a=True, ws=True, m=mat) # reset matrix
     
     prog.setObjectSyncing(wasSyncing) # restore syncing state
-    
-    
-    
+        
+
+# TODO: move to maya-specific pipeline-file
 def exportSelectedToFBX(path):
     """ export selection to file specified by `path`
 

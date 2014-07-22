@@ -196,20 +196,20 @@ def _onAfterDuplicateCB(data):
         t,r,s = getTransformationFromObj(new)
         # now get an unused name from udk
         # if the names mismatch, we need to rename the object in maya
-        # the name maya actually assigns to the object may differ again
+        # the name maya actually assigns to the object may change again
         # so we need to do this until maya and udk use the same name
-        mName = str(new)
-        uName = ""
+        mName = str(new) # maya's Name
+        uName = "" # Engine's Name
         while True:
             uName = m2u.core.getEditor().getFreeName(mName)
-            _lg.debug("udk returned: "+uName)
+            _lg.debug("Editor returned '"+uName+ "' as a free name.")
             if uName is None: return
             if uName != mName:
-                _lg.debug("name already in use, need to find a new one.")
+                _lg.debug("Name '%s' already in use, need to find a new one." % mName)
                 mName = str(pm.rename(mName, uName))
-            if uName == mName: # no else, because mName may have changed
+            if uName == mName: # not 'else', because mName may have changed
                 break
-        m2u.core.getEditor().duplicateObject(str(old), uName, t, r, s)
+        result = m2u.core.getEditor().duplicateObject(str(old), uName, t, r, s)
         # TODO: maybe check the return value of duplicateObject call
         # since we changed the name, we need to select the renamed object or
         # the user will get a MayaNodeError when trying to move the duplicates
@@ -235,7 +235,17 @@ def _onNameChangedCB(node, prevName, data):
     newName = str(mfnnode.name())
     if "#" in newName: # those are only temporary name changes to create numbers
         return
+    if newName.startswith("__"): # temporary duplicate or import names
+        return
     _lg.debug("maya changed name to %s" % newName)
     #print "type is %s" % typeName
     m2u.core.getEditor().renameObject(prevName, newName)
-    # TODO: handle return code of renameObject appropriately 
+    # TODO: handle return code of renameObject appropriately
+
+
+######################
+# deleteion tracking #
+######################
+
+def _onDeleteCB(node, data):
+    
