@@ -7,6 +7,9 @@ transformation values and on a change will execute a sync.
 All object script jobs will be removed when the selection changed before new
 SJs are created.
 
+Other callbacks are created to track if objects are created, deleted, renamed, 
+parent-child relationships change, 
+
 """
 
 import pymel.core as pm
@@ -42,16 +45,25 @@ def isObjectSyncing():
     return __bObjectSync
 
 
+# the callback IDs are returned from maya and are used to delete the callbacks
 _onSelectionChangedCBid = None
 _onBeforeDuplicateCBid = None
 _onAfterDuplicateCBid = None
 _onNameChangedCBid = None
+_onObjectCreatedCBid = None
+_onObjectDeletedCBid = None
+_onParentChangedCBid=None
+
+# some callback functions expect a specific node to create a callback for
+# passing a nullMObject makes many of those functions track all nodes instead
 nullMObject = mapi.OpenMaya.MObject()
 
 def createObjectTracker():
+    """ create all callbacks that track object-changes
+    """
     global _onSelectionChangedCBid
     _onSelectionChangedCBid = mapi.MEventMessage.addEventCallback(
-        "SelectionChanged", _onSelectionChangedCB)
+        "SelectionChanged", _onSelectionChangedCB)   
     
     global _onBeforeDuplicateCBid, _onAfterDuplicateCBid
     _onBeforeDuplicateCBid = mapi.MModelMessage.addBeforeDuplicateCallback(
@@ -62,8 +74,23 @@ def createObjectTracker():
     global _onNameChangedCBid
     _onNameChangedCBid = mapi.MNodeMessage.addNameChangedCallback( nullMObject,
         _onNameChangedCB)
+    
+    global _onObjectCreatedCBid, _onObjectDeletedCBid
+    nodeType = "transform" # TODO: maybe use "dagObject"
+    #_onObjectCreatedCBid = mapi.MDGMessage.addNodeAddedCallback(
+    #    _onObjectCreatedCB, nodeType)
+    _onObjectDeletedCBid = mapi.MDGMessage.addNodeRemovedCallback(
+        _onObjectDeletedCB, nodeType)
+    
+    global _onParentChangedCBid
+    #_onParentChangedCBid = mapi.MDagMessage.addAllDagChangesCallback(
+    _onParentChangedCBid = mapi.MDagMessage.addParentAddedCallback(
+        _onParentChangedCB)
+
 
 def deleteObjectTracker():
+    """ delete all callbacks that track object-changes
+    """
     global _onSelectionChangedCBid
     if _onSelectionChangedCBid is not None:
         _deleteObjectSJs()
@@ -81,6 +108,20 @@ def deleteObjectTracker():
     if _onNameChangedCBid is not None:
         mapi.MMessage.removeCallback(_onNameChangedCBid)
         _onNameChangedCBid = None
+    
+    global _onObjectCreatedCBid, _onObjectDeletedCBid
+    if _onObjectCreatedCBid is not None:
+        mapi.MMessage.removeCallback(_onObjectCreatedCBid)
+        _onObjectCreatedCBid = None
+    if _onObjectDeletedCBid is not None:
+        mapi.MMessage.removeCallback(_onObjectDeletedCBid)
+        _onObjectDeletedCBid = None
+    
+    global _onParentChangedCBid
+    if _onParentChangedCBid is not None:
+        mapi.MMessage.removeCallback(_onParentChangedCBid)
+        _onParentChangedCBid = None
+
 
 
 #########################
@@ -102,13 +143,17 @@ def getTransformationFromObj(obj):
     or the UI.
 
     """
-    tx,ty,tz = pm.xform(obj,query=True, ws=True, t=True)
+    # if the engine supports nested transforms, world-space transforms
+    # will mess up the result
+    useWorldSpace = not m2u.core.getEditor().supportsParenting()
+    
+    tx,ty,tz = pm.xform(obj,query=True, ws=useWorldSpace, t=True)
     #tx,ty,tz = translationMayaToUDK(t)
     #tx,ty,tz = (-tz,tx,ty) # y-up
     #tx,ty,tz = (ty,tx,tz) # z-up
     tx,ty,tz = (tx,-ty,tz) # z-up as fbx from udk
     
-    rx,ry,rz = pm.xform(obj,query=True, ws=True, ro=True)
+    rx,ry,rz = pm.xform(obj,query=True, ws=useWorldSpace, ro=True)
     #rx,ry,rz = rotationMayaToUDK(r) #script job namespace problem
     #global RADIAN_TO_DEGR
     #global DEGR_TO_RADIAN
@@ -146,8 +191,6 @@ def _onSelectionChangedCB(data):
         if obj.nodeType() != "transform":
             continue
         #since the sj is in maya namespace, we need the full qualifier to onObjChanged
-        #sj = pm.scriptJob( attributeChange=[obj.name()+'.inverseMatrix',
-        #        "m2u.core.getProgram().onObjectChangedSJ(\""+obj.name()+"\")"] )
         sj = pm.scriptJob( attributeChange=[obj.name()+'.inverseMatrix',
                 __name__+".onObjectChangedSJ(\""+obj.name()+"\")"] )
         _objectScriptJobs.append(sj)
@@ -243,9 +286,40 @@ def _onNameChangedCB(node, prevName, data):
     # TODO: handle return code of renameObject appropriately
 
 
-######################
-# deleteion tracking #
-######################
+###################################
+# creation and deleteion tracking #
+###################################
 
-def _onDeleteCB(node, data):
+def _onObjectDeletedCB(node, data):
+    """ called everytime a node is deleted """
+    mfnnode = mapi.MFnDependencyNode(node)
+    name = str(mfnnode.name())
+    _lg.debug("maya deleted object %s" % name)
+    m2u.core.getEditor().deleteObject(name)
+
+
+def _onObjectCreatedCB(node, data):
+    """ called everytime a node is created
+    Currently unused, we use duplicate and import callbacks to track new objects
+    that are important for us because they are based on existing assets.
+    to send "new objects" to the editor, a much more sophisticated approach
+    initiated by the user is necessary anyway.
+    """
+    #print "object created:"
+    #print node
+    pass
+
+
+def _onParentChangedCB(child, parent, data):
+    """ called everytime a child gets a new parent
+
+    if parent name is empty '', the child was parented to the world
     
+    """
+    # TODO: maybe use fullPathName() if namespaces are used for levels 
+    nameC = child.partialPathName()
+    nameP = parent.partialPathName()
+    _lg.debug("child '%s' got new parent '%s'" % (nameC, nameP))
+    if nameC == '': # error
+        return
+    m2u.core.getEditor().parentChildTo(nameC, nameP)

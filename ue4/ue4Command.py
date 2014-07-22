@@ -150,3 +150,23 @@ def getFreeName(name, maxIters=5000):
     msg = ("GetFreeName "+name)
     result = ue4Conn.sendMessage(msg)
     return result;
+
+
+def deleteObject(name):
+    """ try to delete the object, no return code
+    """
+    msg = ("DeleteObject "+name)
+    ue4Conn.sendMessage(msg)
+
+
+def parentChildTo(childName, parentName):
+    """ set the parent of childName to be parentName
+
+    if parentName is an empty string or None, will parent to the world
+
+    """
+    msg = ("ParentChildTo "+childName)
+    if (parentName is not None) and (parentName !=''):
+        msg = msg + " " + parentName
+    
+    ue4Conn.sendMessage(msg)

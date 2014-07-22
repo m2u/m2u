@@ -27,6 +27,12 @@ from m2u.ue4 import ue4Export
 def getName():
     return "UE4"
 
+def supportsParenting():
+    """ if this Engine supports parenting of objects
+    aka nesting of transforms or attaching
+    """
+    return True
+
 connectToInstance = _u.connectToUEd
 
 # -- Selection --
@@ -41,6 +47,8 @@ deleteSelected = _a.deleteSelected
 renameObject = _a.renameObject
 #insertNewObject = _a.insertNewObject
 duplicateObject = _a.duplicateObject
+deleteObject = _a.deleteObject
+parentChildTo = _a.parentChildTo
 
 # -- Visibility --
 hideSelected = _v.hideSelected
