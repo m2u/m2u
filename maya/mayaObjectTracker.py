@@ -55,7 +55,7 @@ _onObjectDeletedCBid = None
 _onParentChangedCBid=None
 
 # some callback functions expect a specific node to create a callback for
-# passing a nullMObject makes many of those functions track all nodes instead
+# passing a nullMObject makes some of those functions track all nodes instead
 nullMObject = mapi.OpenMaya.MObject()
 
 def createObjectTracker():
@@ -86,6 +86,12 @@ def createObjectTracker():
     #_onParentChangedCBid = mapi.MDagMessage.addAllDagChangesCallback(
     _onParentChangedCBid = mapi.MDagMessage.addParentAddedCallback(
         _onParentChangedCB)
+    
+    # automatically create tracking script jobs on the current selection
+    # but don't emit "selection changed" or it will be emitted very often during
+    # tracking-disabling operations like duplication and name-chaning
+    #_onSelectionChangedCB(None)
+    _createObjectScriptJobsNoSelChanged()
 
 
 def deleteObjectTracker():
@@ -196,6 +202,22 @@ def _onSelectionChangedCB(data):
         _objectScriptJobs.append(sj)
         m2u.core.getEditor().selectByNames([obj.name()])
 
+def _createObjectScriptJobsNoSelChanged():
+    """ create the object tracking script jobs without emitting a selection changed
+    to the editor
+    """
+    global _objectScriptJobs
+    _deleteObjectSJs()
+    
+    for obj in pm.selected():
+        # only track transform-nodes
+        if obj.nodeType() != "transform":
+            continue
+        #since the sj is in maya namespace, we need the full qualifier to onObjChanged
+        sj = pm.scriptJob( attributeChange=[obj.name()+'.inverseMatrix',
+                __name__+".onObjectChangedSJ(\""+obj.name()+"\")"] )
+        _objectScriptJobs.append(sj)
+
 
 def onObjectChangedSJ(obj):
     t,r,s = __thismodule.getTransformationFromObj(obj)
@@ -243,21 +265,30 @@ def _onAfterDuplicateCB(data):
         # so we need to do this until maya and udk use the same name
         mName = str(new) # maya's Name
         uName = "" # Engine's Name
+        # disable object syncing so internal renames won't trigger a rename callback
+        wasObjectSyncing = m2u.core.getProgram().isObjectSyncing()
+        m2u.core.getProgram().setObjectSyncing(False)
         while True:
             uName = m2u.core.getEditor().getFreeName(mName)
             _lg.debug("Editor returned '"+uName+ "' as a free name.")
-            if uName is None: return
+            #if uName is None: return
             if uName != mName:
                 _lg.debug("Name '%s' already in use, need to find a new one." % mName)
                 mName = str(pm.rename(mName, uName))
             if uName == mName: # not 'else', because mName may have changed
                 break
-        result = m2u.core.getEditor().duplicateObject(str(old), uName, t, r, s)
+        m2u.core.getProgram().setObjectSyncing(wasObjectSyncing)
+        code, edName = m2u.core.getEditor().duplicateObject(str(old), uName, t, r, s)
         # TODO: maybe check the return value of duplicateObject call
         # since we changed the name, we need to select the renamed object or
         # the user will get a MayaNodeError when trying to move the duplicates
         # also subsequent duplicates may depend on a correct selection list
         #reselectNamesList.append(mName)
+        
+        # this should not happen, because we use getFreeName beforehand
+        if code == 3:
+            _lg.error( "Renaming the duplicate failed, maya object %s and "
+                       "engine object %s are now desynced" % (mName, edName) )
         
         # select waehrend duplicate aufrufen killt den transform wert fuer smart
         # stattdessen muesste entweder ein reselect nach allen duplicates sein
@@ -282,8 +313,37 @@ def _onNameChangedCB(node, prevName, data):
         return
     _lg.debug("maya changed name to %s" % newName)
     #print "type is %s" % typeName
-    m2u.core.getEditor().renameObject(prevName, newName)
-    # TODO: handle return code of renameObject appropriately
+    if prevName == newName: #nothing changes really
+        return
+    
+    # TODO: delegate the name-finding functionality to a common function for
+    # this and the duplicate callback
+    mName = newName # maya's Name
+    uName = "" # Engine's Name
+    # disable object syncing so internal renames won't trigger a new rename callback
+    wasObjectSyncing = m2u.core.getProgram().isObjectSyncing()
+    m2u.core.getProgram().setObjectSyncing(False)
+    while True:
+        uName = m2u.core.getEditor().getFreeName(mName)
+        _lg.debug("Editor returned '"+uName+ "' as a free name.")
+        #if uName is None: return
+        if uName != mName:
+            _lg.debug("Name '%s' already in use, need to find a new one." % mName)
+            mName = str(pm.rename(mName, uName))
+        if uName == mName: # not 'else', because mName may have changed
+            break
+    m2u.core.getProgram().setObjectSyncing(wasObjectSyncing)
+    code,edName = m2u.core.getEditor().renameObject(prevName, mName)
+    if code is True: # no problems occured
+        return
+    else:
+        if edName is None:
+            # error, no renaming took place, the object was not found or so
+            return
+    # if we end up here, the editor returned a different name than we desired
+    # this should not happen since we "getFreeName" beforehand
+    _lg.error( "Renaming failed, maya object %s and engine object %s are now desynced"
+               % (mName, edName) )
 
 
 ##################################

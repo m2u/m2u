@@ -41,6 +41,8 @@ def _receiveMessage():
     return data
 
 def closeConnection():
+    print "Closing connection"
     global _s
-    _s.close()
-    _s = None
+    if _s is not None:
+        _s.close()
+        _s = None
