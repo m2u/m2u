@@ -286,9 +286,9 @@ def _onNameChangedCB(node, prevName, data):
     # TODO: handle return code of renameObject appropriately
 
 
-###################################
-# creation and deleteion tracking #
-###################################
+##################################
+# creation and deletion tracking #
+##################################
 
 def _onObjectDeletedCB(node, data):
     """ called everytime a node is deleted """

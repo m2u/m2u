@@ -39,6 +39,7 @@ Objects
 from m2u.maya import mayaCommand as _cmd
 from m2u.maya import mayaCamera as _cam
 from m2u.maya import mayaObjectTracker as _obj
+from m2u.maya import mayaVisibilityTracker as _vis
 
 # -- General --
 def getName():
@@ -53,6 +54,10 @@ setCameraFOV = _cam.setCameraFOV
 # -- Objects --
 setObjectSyncing = _obj.setObjectSyncing
 isObjectSyncing = _obj.isObjectSyncing
+
+# -- Visibility --
+setVisibilitySyncing = _vis.setVisibilitySyncing
+isVisibilitySyncing = _vis.isVisibilitySyncing
 
 # TODO: move to pipeline file or so
 importFile = _cmd.importFile
