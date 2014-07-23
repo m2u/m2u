@@ -70,25 +70,26 @@ def _onHide(cmd):
     
     # hide list of objects
     elif "{" in cmd:
+        # HACK:
         # we don't parse the whole list of selected objects, that would mean we
         # would have to hide every object "by hand" in the Engine.
-        # Instead we check if the first object is found in the current selection list.
-        # If it is, the command was "hide selected", if not, it was "hide unselected"
-        # TODO: not sure if it works this way, because the selection might change
-        # before the callback is executed.
+        # Instead we check if the first object in the list is visible or not
+        # if it is, the command was hide unselected, most likely at least
+        # of course there may be the case, where a hidden selected object is
+        # in the list, while hiding selected objects, but it shouldn't happen
+        # too often
         
-        # something like this: hide "-rh" {"pCube1","pCube2","pCube3","pCube4","pCube5","pCube6","pCube7"};
+        # the list looks something like this:
+        # {"pCube1","pCube2","pCube3","pCube4","pCube5","pCube6","pCube7"};
         start = cmd.find("{") + 2 #jump over {"
         end = cmd.find("\"",start)
         name = cmd[start:end]
         
-        for obj in pm.selected():
-            if obj == name:
-                m2u.core.getEditor().hideSelected()
-                break
-            else:
-                m2u.core.getEditor().isolateSelected()
-                break
+        visible = pm.getAttr((name+".visibility"))
+        if visible:
+            print "hide unselected"
+        else:
+            print "hide selected"
     
     # if no list is provided, it should hide the selected only
     # but this is never executed this way in maya
