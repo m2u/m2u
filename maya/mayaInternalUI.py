@@ -26,6 +26,12 @@ def cbSyncObjects(*args):
 def cbSyncObjectsOff(*args):
     m2u.core.getProgram().setObjectSyncing(False)
 
+def cbSyncVisibility(*args):
+    m2u.core.getProgram().setVisibilitySyncing(True)
+
+def cbSyncVisibilityOff(*args):
+    m2u.core.getProgram().setVisibilitySyncing(False)
+
 def cbFetchSelected(*args):
     # this is circumventing the interface
     #m2u.maya.mayaCommand.fetchSelectedObjectsFromEditor()
@@ -47,6 +53,8 @@ def createUI():
                  ofc = cbSyncCameraOff, v = False)
     pm.checkBox( label='Sync Objects', onc = cbSyncObjects,
                  ofc = cbSyncObjectsOff, v = False)
+    pm.checkBox( label='Sync Visibility', onc = cbSyncVisibility,
+                 ofc = cbSyncVisibilityOff, v = False)
     pm.separator()
     pm.button( label='Fetch Selected', c = cbFetchSelected)
     pm.button( label='Import Content Test', c = cbUDKImportContent)

@@ -73,24 +73,28 @@ def _onHide(cmd):
         # HACK:
         # we don't parse the whole list of selected objects, that would mean we
         # would have to hide every object "by hand" in the Engine.
-        # Instead we check if the first object in the list is visible or not
-        # if it is, the command was hide unselected, most likely at least
-        # of course there may be the case, where a hidden selected object is
-        # in the list, while hiding selected objects, but it shouldn't happen
-        # too often
+        # Instead we check if the current selection is empty or not.
+        # Normally hiding the selected will empty the list, because all visible
+        # objects that turn invisible will get deselected.
+        # There is the case, where already hidden objects are selected. Those won't
+        # be deselected, but they are already invisible, so we can check their
+        # visibility flag.
+        # If the selection list is empty, hide selected was called.
+        # If the selection list contains visible objects, hide unselected was called.
+        # If the selection list contains only invisible objects, hide selected.
         
-        # the list looks something like this:
-        # {"pCube1","pCube2","pCube3","pCube4","pCube5","pCube6","pCube7"};
-        start = cmd.find("{") + 2 #jump over {"
-        end = cmd.find("\"",start)
-        name = cmd[start:end]
+        sl = pm.selected()
+        if len(sl) == 0:
+            m2u.core.getEditor().hideSelected()
+            return
+        for obj in sl:
+            visible = pm.getAttr((obj+".visibility"))
+            if visible:
+                m2u.core.getEditor().isolateSelected()
+                return
+        # no visible objects in the selection list
+        m2u.core.getEditor().hideSelected()
         
-        visible = pm.getAttr((name+".visibility"))
-        if visible:
-            print "hide unselected"
-        else:
-            print "hide selected"
-    
     # if no list is provided, it should hide the selected only
     # but this is never executed this way in maya
     else:

@@ -40,6 +40,7 @@ from m2u.maya import mayaCommand as _cmd
 from m2u.maya import mayaCamera as _cam
 from m2u.maya import mayaObjectTracker as _obj
 from m2u.maya import mayaVisibilityTracker as _vis
+from m2u.maya import mayaSceneTracker as _sc
 
 # -- General --
 def getName():

@@ -34,6 +34,7 @@ def supportsParenting():
     return True
 
 connectToInstance = _u.connectToUEd
+disconnect = _u.closeConnection
 
 # -- Selection --
 selectByNames = _s.selectByNames
