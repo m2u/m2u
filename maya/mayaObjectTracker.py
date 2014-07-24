@@ -76,7 +76,7 @@ def createObjectTracker():
         _onNameChangedCB)
     
     global _onObjectCreatedCBid, _onObjectDeletedCBid
-    nodeType = "transform" # TODO: maybe use "dagObject"
+    nodeType = "transform" # TODO: maybe use "dagObject" and filter afterwards
     #_onObjectCreatedCBid = mapi.MDGMessage.addNodeAddedCallback(
     #    _onObjectCreatedCB, nodeType)
     _onObjectDeletedCBid = mapi.MDGMessage.addNodeRemovedCallback(
@@ -304,8 +304,6 @@ def _onAfterDuplicateCB(data):
 def _onNameChangedCB(node, prevName, data):
     mfnnode = mapi.MFnDependencyNode(node)
     typeName = mfnnode.typeName()
-    if typeName != "transform": # we are not interested in renamed shapes or so
-        return
     newName = str(mfnnode.name())
     if "#" in newName: # those are only temporary name changes to create numbers
         return
@@ -316,6 +314,16 @@ def _onNameChangedCB(node, prevName, data):
     if prevName == newName: #nothing changes really
         return
     
+    # now actually do stuff depending on the node type
+    if typeName == "transform": # we are not interested in renamed shapes or so
+        _onNameChangedTransformNode(newName, prevName, data)
+    elif typeName == "displayLayer":
+        _onNameChangedDisplayLayer(newName, prevName, data)
+
+
+def _onNameChangedTransformNode(newName, prevName, data):
+    """ called whenever a transform-node's name was changed
+    """   
     # TODO: delegate the name-finding functionality to a common function for
     # this and the duplicate callback
     mName = newName # maya's Name
@@ -345,6 +353,12 @@ def _onNameChangedCB(node, prevName, data):
     _lg.error( "Renaming failed, maya object %s and engine object %s are now desynced"
                % (mName, edName) )
 
+
+def _onNameChangedDisplayLayer(newName, prevName, data):
+    """ called whenever a displayLayer-node's name was changed
+    """
+    #m2u.core.getEditor().renameLayer(prevName, newName)
+    pass
 
 ##################################
 # creation and deletion tracking #
