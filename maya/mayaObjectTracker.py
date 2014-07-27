@@ -89,7 +89,7 @@ def createObjectTracker():
     
     # automatically create tracking script jobs on the current selection
     # but don't emit "selection changed" or it will be emitted very often during
-    # tracking-disabling operations like duplication and name-chaning
+    # tracking-disabling operations like duplication and name-changing
     #_onSelectionChangedCB(None)
     _createObjectScriptJobsNoSelChanged()
 
@@ -304,6 +304,11 @@ def _onAfterDuplicateCB(data):
 def _onNameChangedCB(node, prevName, data):
     mfnnode = mapi.MFnDependencyNode(node)
     typeName = mfnnode.typeName()
+    
+    # we are not interested in renamed shapes or so
+    if (not typeName == "transform") or (not typeName == "displayLayer"): 
+        return
+    
     newName = str(mfnnode.name())
     if "#" in newName: # those are only temporary name changes to create numbers
         return
@@ -314,16 +319,13 @@ def _onNameChangedCB(node, prevName, data):
     if prevName == newName: #nothing changes really
         return
     
-    # now actually do stuff depending on the node type
-    if typeName == "transform": # we are not interested in renamed shapes or so
-        _onNameChangedTransformNode(newName, prevName, data)
-    elif typeName == "displayLayer":
-        _onNameChangedDisplayLayer(newName, prevName, data)
-
-
-def _onNameChangedTransformNode(newName, prevName, data):
-    """ called whenever a transform-node's name was changed
-    """   
+    
+    #    _onNameChangedTransformNode(newName, prevName, data)
+    #elif typeName == "displayLayer":
+    #    _onNameChangedDisplayLayer(newName, prevName, data)
+#def _onNameChangedTransformNode(newName, prevName, data):
+#    """ called whenever a transform-node's name was changed
+#    """   
     # TODO: delegate the name-finding functionality to a common function for
     # this and the duplicate callback
     mName = newName # maya's Name
@@ -354,11 +356,11 @@ def _onNameChangedTransformNode(newName, prevName, data):
                % (mName, edName) )
 
 
-def _onNameChangedDisplayLayer(newName, prevName, data):
-    """ called whenever a displayLayer-node's name was changed
-    """
-    #m2u.core.getEditor().renameLayer(prevName, newName)
-    pass
+#def _onNameChangedDisplayLayer(newName, prevName, data):
+#    """ called whenever a displayLayer-node's name was changed
+#    """
+#    #m2u.core.getEditor().renameLayer(prevName, newName)
+#    pass
 
 ##################################
 # creation and deletion tracking #

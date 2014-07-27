@@ -37,25 +37,6 @@ def translationMayaToUDK(t):
     #return tx,-ty,tz #maya z-up
     #return tx,tz,ty #maya y-up to udk-fbx-z-up?
 
-"""callbacks
-playback sync stuff?
-MDGMessage.addTimeChangeCallback
-
-
-duplicated stuff?
-import maya.OpenMaya as mapi
-
-def dupCb(data):
-    print "dupCb called"
-    
-mapi.MModelMessage.addAfterDuplicateCallback(dupCb)
-
-
-mapi.MEventMessage.addEventCallback("NewSceneOpened", ...)
-oder SceneOpene: disconnect sync?
-alternativ MSceneMessage
-
-"""
 
 # TODO: move this function to a program-specific pipeline module
 # maybe it has to be split in one that is m2u specific and one that
@@ -83,6 +64,9 @@ def importFile(path):
 
     
 # TODO: remove this function or move to UDK specific file
+# it is UDK specific, ue4 uses another function.
+# fetching is an editor-task, where the editor tells the program
+# to import the fetched file, when it is done writing.
 def fetchSelectedObjectsFromEditor():
     """ tell UDK to export the selected objects into a temporary FBX file
     and then maya will import that file.

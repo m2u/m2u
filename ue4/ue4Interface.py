@@ -33,6 +33,19 @@ def supportsParenting():
     """
     return True
 
+
+# TODO: maybe this shouldn't be necessary
+# instead it would be better if all functions that generally could
+# be batch-operations always take a list. If the specific engine-implementation
+# cannot operate on lists, it must go through the list in the python function
+# and call the single-shot function internally for each list item
+def supportsBatchOperations():
+    """ if this Engine-implementation supports function that
+    operate on lists of objects, for example duplicating multiple
+    objects at once.
+    """
+    return True
+
 connectToInstance = _u.connectToUEd
 disconnect = _u.closeConnection
 

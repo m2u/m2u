@@ -78,6 +78,8 @@ def renameObject(name, newName):
         return (False, result)
 
 
+# TODO: implement a batch duplicate function for UE and the appropriate
+# caller in maya
 def duplicateObject(name, dupName, t=None, r=None, s=None):
     """duplicate an object with optional transformations
 
@@ -142,7 +144,7 @@ def getFreeName(name, maxIters=5000):
 
     :param name: the basic name, to check
     :param maxIters: the maximum number of name-checks to perform
-    (maxIters currently not used)
+    (maxIters currently not used in UE4)
     
     :return: string, name that is free
     
