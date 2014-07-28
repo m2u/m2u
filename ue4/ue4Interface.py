@@ -22,6 +22,7 @@ from m2u.ue4 import ue4Command as _a #editing
 from m2u.ue4 import ue4Visibility as _v #visibility
 from m2u.ue4 import ue4Command as _c #other commands
 from m2u.ue4 import ue4Export
+from m2u.ue4 import ue4Import as _i
 
 # -- General --
 def getName():
@@ -45,6 +46,9 @@ def supportsBatchOperations():
     objects at once.
     """
     return True
+
+# TODO: move those things to pipeline-files maybe?
+importAssetsBatch = _i.importAssetsBatch
 
 connectToInstance = _u.connectToUEd
 disconnect = _u.closeConnection

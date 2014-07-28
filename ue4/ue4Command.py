@@ -4,6 +4,7 @@ commands will be issued by sending messages to the TCP port through :mod:`ue4Con
 
 """
 
+from m2u.helper.ObjectInfo import ObjectInfo
 from m2u.ue4 import ue4Conn
 
 from m2u import logger as _logger
@@ -172,3 +173,29 @@ def parentChildTo(childName, parentName):
         msg = msg + " " + parentName
     
     ue4Conn.sendMessage(msg)
+
+
+def addActorBatch(assetList):
+    """ add an actor to the level for each entry in the assetList
+    each value in the List has to be an `ObjectInfo` object.
+    """
+    msg = 'AddActorBatch'
+    for objInfo in assetList:
+        line = objectInfoToString(objInfo)
+        msg = msg +"\n" + line
+    ue4Conn.sendMessage(msg)
+
+
+def objectInfoToString(objInfo):
+    """ convert an ObjectInfo object into a one-line string as used by
+    our UE4-interpreter.
+    
+    """
+    t = objInfo.pos
+    r = objInfo.rot
+    s = objInfo.scale
+    T = "" if t is None else ("T=(%f %f %f)" % (t[0], t[1], t[2]))
+    R = "" if r is None else ("R=(%f %f %f)" % (r[0], r[1], r[2]))
+    S = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
+    text = objInfo.AssetPath+" "+objInfo.name+" "+T+" "+R+" "+S
+    return text

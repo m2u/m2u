@@ -10,6 +10,7 @@ import pymel.api as mapi
 
 import m2u
 import m2u.helper as helper
+import m2u.maya.mayaObjectTracker
 
 from m2u import logger as _logger
 _lg = _logger.getLogger(__name__)
@@ -99,30 +100,23 @@ def fetchSelectedObjectsFromEditor():
 # TODO: move to maya-specific pipeline file
 def exportObjectAsAsset(name, path):
     """ export object `name` to FBX file specified by `path`
-    and edit/add the `MeshPath` attribute accordingly.
-
-    if a `MeshPath` attribute is found and is not empty,
-    that name will be presented to the user n shit
-    then the user can decide how to change the name (the signature)
-    the path will actually be created from the signature, based on the
-    project base directory that should be specified in the "pipeline"
-    settings of m2u, if nothing is set there, the TEMP folder should be used
-    then may check the already existing files in the directory and increase
-    a suffix on the meshname to create a unique new one, and present that to
-    the user?
+    
+    :param name: objects name (name of the tranfsorm node)
+    :param path: file path with extension, RELATIVE to the content root
 
     """
-    pm.addAttr(longName="MeshPath", dataType="string", keyable=False)
-    obj=pm.selected()[0]
-    attr = pm.getAttr(obj.name()+".MeshPath")
-    print attr
+    pipe = m2u.core.getPipeline()
+    contentRoot = pipe.getProjectExportDir()
+    fullpath = contentRoot+"/"+path
+    exportObjectCentered(name, fullpath, center=True)
+
 
 # TODO: move to maya-specific pipeline-file
 def exportObjectCentered(name, path, center=True):
     """ export object `name` to FBX file specified by `path`
     
     :param name: objects name
-    :param path: file path for the fbx file
+    :param path: ABSOLUTE file path for the fbx file
     :param center: object transformation will be reset before export
 
     """
@@ -149,11 +143,12 @@ def exportSelectedToFBX(path):
 
     fbx settings will be set from `fbxSettings` preset file
     """
+    # TODO: fbxExportPreset should be Editor-specific
     if os.path.exists(path):
         os.remove(path) 
     sfpath = m2u.core.getM2uBasePath()+"/fbxExportPreset.cfg"
     lsfcmd = "FBXLoadExportPresetFile -f %s"
-    expcmd = "FBXExport -f \"%s\" -s" % path.replace("\\","\\\\")
+    expcmd = "FBXExport -f \"%s\" -s" % path.replace("\\","/")
 
 
 
@@ -199,7 +194,7 @@ def sendSelectedToEdAddMissingOnly():
     """
     pass
 
-def sendSelectedToEdAssNew():
+def sendSelectedToEdAsNew():
     """ send selected as new assets.
     This will ignore any "AssetPath" attribute on the objects
     and instead ask the user how to name the new object(s).
@@ -234,6 +229,13 @@ def sendSelectedToEd():
     We might intelligently do a check on file-date, import-date in editor
     and maybe a import-date in program for one or the other case to determine
     if a reimport or a file overwrite is necessary or not
+
+    What is the "AssetPath" supposed to be?
+    It is the file path, including the file-extension, relative to the current
+    projects Art-Source folder. No absolute paths, but that is depending on the
+    actual pipeline-implementation, since all functions that deal with
+    file paths will be delegated to a pipeline module, and that may be replaced
+    by the user.
     
     1. get selected objects
     2. for each object, get the "AssetPath" attribute
@@ -266,6 +268,10 @@ def sendSelectedToEd():
     8. for each selected object
        tell the editor to add an actor with the AssetPath as asset
     extend to send lights and stuff like that
+
+    this function will perform something between O(n) and O(n^2) would need to analyze this a little more
+    only counting objects... vertex count may be different in scenes, and the heavier
+    the vert count, again the heavier the check will be...
     """
 
     #1. get selected objects (only transform nodes)
@@ -276,7 +282,7 @@ def sendSelectedToEd():
         meshShapes = pm.listRelatives(obj, shapes=True, type="mesh")
         if len(meshShapes)>0:
             selectedMeshes.append(obj)
-    # todo: maybe filter other transferable stuff like lights or so
+    # TODO: maybe filter other transferable stuff like lights or so
     #2. for each object get the "AssetPath" attribute
     untaggedList = list()
     taggedDict = {}
@@ -301,7 +307,7 @@ def sendSelectedToEd():
         #for obj in lis: #we modify lis, so iterator won't work
         while len(lis)>0: # use while instead
             obj = lis[0]
-            taggedUniqueDict.setdefault(obj,[])
+            taggedUniqueDict[obj]=[]
             # compare this object against all others in the list.
             for otherObj in lis[1:]:
                 if pm.polyCompare(obj, otherObj, vertices=True):
@@ -340,7 +346,8 @@ def sendSelectedToEd():
             untaggedList.remove(obj)
             # we will automatically compare to all other untagged to find
             # members for our new unique in the next loop iteration
-    
+
+    # TODO: 4. UI-stuff...
     #4. if taggedDiscrepancy or untaggedUniques were detected,
     # list all uniques in the UI and let the user change names
     # force him to change names for taggedUniques with same AssetPath of course
@@ -350,10 +357,27 @@ def sendSelectedToEd():
             # set a new assetPath on any of those unique guy's lists
     
     #5. export files stuff
-
+    for obj in taggedUniqueDict.keys():
+        exportObjectAsAsset(obj.name(), obj.attr("AssetPath").get())
+        
     #6. tell the editor to import all the uniques
-
+    fileList = []
+    for obj in tagedUniqueDict.keys():
+        fileList.append(obj.attr("AssetPath").get())
+    m2u.core.getEditor().importAssetsBatch(fileList)
+        
     #7. tell the editor to assemble the scene
+    for obj in selectedMeshes:
+        # TODO: make that a new function
+        objInfo = ObjectInfo(name = obj.shortName(), typeInternal = "mesh",
+                             typeCommon = "mesh")
+        objTransforms = mayaObjectTracker.getTransformationFromObj(obj)
+        objInfo.pos = objTransforms[0]
+        objInfo.rot = objTransforms[1]
+        objInfo.scale = objTransforms[2]
+        objInfo.AssetPath = obj.attr("AssetPath").get()
+        m2u.core.getEditor().
+    #TODO: add support for lights and so on
 
 
 
