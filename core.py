@@ -1,57 +1,90 @@
-# the actual m2u module file
-# information herein should be the only reference all other files should need to know.
 
+"""
+the window to the world.
 
-# this is the core of m2u the only and first module to be imported and initialize called from the program specific startup scripts
+The core module is the only reference other systems (like the UI) should need
+to know. To access the actual program or editor interfaces, get the 
+module by calling :func:`getProgram` and :func:`getEditor`. 
+
+"""
 
 import os
+import m2u
+from m2u import logger as _logger
+_lg = _logger.getLogger(__name__)
+import m2u.settings as settings
 
-#this function may be changed to return a user-defined folder
-def getTempFolder():
-    return os.getenv("TEMP")
+def getM2uBasePath():
+    """ get the path to the m2u folder (the folder this file is in)
+    """
+    fpath = os.path.abspath(__file__)
+    fdir = os.path.dirname(fpath)
+    return fdir
 
-__program = None
-__editor = None
+
+_program = None
+_editor = None
+_pipeline = None
 
 def getProgram():
-    global __program
-    return __program
+    """get the program module"""
+    return _program
 
 def getEditor():
-    global __editor
-    return __editor
+    """get the editor module"""
+    return _editor
+
+def getPipeline():
+    """get the pipeline module"""
+    return _pipeline
 
 def initialize(programName,editorName="udk"):
-    """
+    """Initializes the whole m2u system.
     
-    Arguments:
-    - `program`: the program to use 'max' or 'maya'
-    - `editor`: the target engine to use currently only 'udk'
-    """
-    initProgram(programName)
-    initEditor(editorName)
-
-def initProgram(programName):
-    """
-    Load the correct module for the program
-    """
-    global __program
+    :param programName: the program to use 'max' or 'maya'
+    :param editorName: the target engine to use
     
-    if programName == "maya":
-        import maya
-        __program = maya
+    """
+    _initProgram(programName)
+    _initEditor(editorName)
+    _initPipeline()
 
-    elif programName == "max":
-        import max
-        __program = max
-    else:
-        print("# m2u: undefined program")
+def _initProgram(programName):
+    """Load the correct module as program."""
+    global _program
+    try:
+        #_program = __import__("m2u."+programName)
+        _program = __import__('m2u.'+programName, globals(), locals(),
+                              ["__name__"], -1)
+        _lg.info( "Program module is `"+_program.__name__+"`")
+    except ImportError:
+        _lg.error("Unable to import program module %s" % (programName,))
 
-def initEditor(editorName):
-    global __editor
-    import udk
-    __editor = udk
+def _initEditor(editorName):
+    """load the module for the editor"""
+    global _editor
+    try:
+        _editor = __import__('m2u.'+editorName, globals(), locals(),
+                              ["__name__"], -1)
+        _lg.info( "Editor module is `"+_editor.__name__+"`")
+    except ImportError:
+        _lg.error("Unable to import editor module %s" % (editorName,))
 
-def alive():
-    print("m2u module (hub) is alive")
 
+def _initPipeline():
+    """load and use the pipeline module that is set in the settings file.
+    If not set, use the m2u-minimal-pipeline instead.
+
+    """
+    global _pipeline
+    name = "m2u.pipeline" # the fallback mini pipe
+    
+    if settings.config.has_option("General", "PipelineModule"):
+        name = settings.config.get("General", "PipelineModule")
+    
+    try:
+        _pipeline = __import__(name, globals(), locals(),
+                             ["__name__"], -1)
+        _lg.info( "Pipeline module is `"+_pipeline.__name__+"`")
+    except ImportError:
+        _lg.error("Unable to import pipeline module %s" % (name,))
