@@ -14,11 +14,6 @@ from m2u import logger as _logger
 _lg = _logger.getLogger(__name__)
 import m2u.settings as settings
 
-def getTempFolder():
-    p = settings.getAndSetValueDefaultIfError("General","Tempdir",
-                                              os.getenv("TEMP"), False)
-    return p
-
 def getM2uBasePath():
     """ get the path to the m2u folder (the folder this file is in)
     """
@@ -26,17 +21,10 @@ def getM2uBasePath():
     fdir = os.path.dirname(fpath)
     return fdir
 
-def getProjectExportDir():
-    """ get the base directory for content of the current user's project
-    folder. Used when exporting and importing mesh-files.
-
-    """
-    # TODO: this is a pipeline task and should be moved to a new file
-    # for common pipeline functionality
-    return getTempFolder()+"/m2u_Export"
 
 _program = None
 _editor = None
+_pipeline = None
 
 def getProgram():
     """get the program module"""
@@ -46,15 +34,20 @@ def getEditor():
     """get the editor module"""
     return _editor
 
+def getPipeline():
+    """get the pipeline module"""
+    return _pipeline
+
 def initialize(programName,editorName="udk"):
     """Initializes the whole m2u system.
     
     :param programName: the program to use 'max' or 'maya'
-    :param editorName: the target engine to use currently only 'udk'
+    :param editorName: the target engine to use
     
     """
     _initProgram(programName)
     _initEditor(editorName)
+    _initPipeline()
 
 def _initProgram(programName):
     """Load the correct module as program."""
@@ -70,6 +63,28 @@ def _initProgram(programName):
 def _initEditor(editorName):
     """load the module for the editor"""
     global _editor
-    import m2u.udk as udk
-    _editor = udk
+    try:
+        _editor = __import__('m2u.'+editorName, globals(), locals(),
+                              ["__name__"], -1)
+        _lg.info( "Editor module is `"+_editor.__name__+"`")
+    except ImportError:
+        _lg.error("Unable to import editor module %s" % (editorName,))
 
+
+def _initPipeline():
+    """load and use the pipeline module that is set in the settings file.
+    If not set, use the m2u-minimal-pipeline instead.
+
+    """
+    global _pipeline
+    name = "m2u.pipeline" # the fallback mini pipe
+    
+    if settings.config.has_option("General", "PipelineModule"):
+        name = settings.config.get("General", "PipelineModule")
+    
+    try:
+        _pipeline = __import__(name, globals(), locals(),
+                             ["__name__"], -1)
+        _lg.info( "Pipeline module is `"+_pipeline.__name__+"`")
+    except ImportError:
+        _lg.error("Unable to import pipeline module %s" % (name,))
