@@ -32,9 +32,20 @@ def importAssetsBatch(relFilePathList):
     msg = ('ImportAssetsBatch')
     contentRoot = pipe.getProjectExportDir()
     for path in relFilePathList:
-        fullpath = contentRoot+"/"+path
-        rpath,ext = os.path.splitext(path)
-        destination = "/Game/"+rpath.replace("\\","/")
-        msg = msg + ' "'+destination+'" "'+fullpath+'"'
-    
+        if not path.startswith("/") and len(path)>0:
+            path = "/"+path
+            
+        filepath = contentRoot+path
+        #rpath,ext = os.path.splitext(path)
+        directory = os.path.dirname(path)
+        # the import destination has to be without the asset-name
+        # it will be auto-generated from the file-name by UE4
+        
+        assP = "/Game"+directory.replace("\\","/")
+        assP = assP.replace("//","/")
+        if assP.endswith("/"):
+            assP=assP[:-1]
+        
+        msg = msg + ' "'+assP+'" "'+filepath+'"'
+    _lg.debug("assembled import batch command: \n"+msg)
     result = ue4Conn.sendMessage(msg)

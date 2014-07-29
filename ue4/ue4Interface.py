@@ -49,6 +49,7 @@ def supportsBatchOperations():
 
 # TODO: move those things to pipeline-files maybe?
 importAssetsBatch = _i.importAssetsBatch
+addActorBatch = _c.addActorBatch
 
 connectToInstance = _u.connectToUEd
 disconnect = _u.closeConnection

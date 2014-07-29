@@ -43,12 +43,17 @@ def cbFetchSelected(*args):
 
 
 def cbSendSelectedToEd(*args):
-    
+    m2u.core.getProgram().mayaCommand.sendSelectedToEd()
     
 def cbUDKImportContent(*args):
     m2u.udk.udkUI.callImportContent("C:\\temp\\mp7_compact_export.fbx",None)
 
+m2uwin = None
 def createUI():
+    global m2uwin
+    if m2uwin is not None:
+        pm.deleteUI(m2uwin, window=True)
+    
     v = m2u.getVersion()
     m2uwin = pm.window( title="m2u "+v+" (maya)", iconName='m2u',
                         widthHeight=(150, 300) )

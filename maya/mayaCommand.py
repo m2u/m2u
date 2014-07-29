@@ -10,7 +10,9 @@ import pymel.api as mapi
 
 import m2u
 import m2u.helper as helper
-import m2u.maya.mayaObjectTracker
+#from m2u.maya import mayaObjectTracker
+from m2u.helper.ObjectInfo import ObjectInfo
+
 
 from m2u import logger as _logger
 _lg = _logger.getLogger(__name__)
@@ -107,7 +109,10 @@ def exportObjectAsAsset(name, path):
     """
     pipe = m2u.core.getPipeline()
     contentRoot = pipe.getProjectExportDir()
-    fullpath = contentRoot+"/"+path
+    lpath,ext = os.path.splitext(path)
+    if ext != ".fbx":
+        ext = ".fbx"
+    fullpath = contentRoot+"/"+lpath+ext
     exportObjectCentered(name, fullpath, center=True)
 
 
@@ -127,12 +132,12 @@ def exportObjectCentered(name, path, center=True):
     pm.select(name, r=True)
     mat = pm.xform(query=True, ws=True, m=True) # backup matrix
     if center:
-        pm.xform(a=True, ws=True, t=(0,0,0), ro=(0,0,0), s=(1,1,1))
+        pm.xform( name, a=True, ws=True, t=(0,0,0), ro=(0,0,0), s=(1,1,1))
     
     exportSelectedToFBX(path)
     
     if center:
-        pm.xform( a=True, ws=True, m=mat) # reset matrix
+        pm.xform( name, a=True, ws=True, m=mat) # reset matrix
     
     prog.setObjectSyncing(wasSyncing) # restore syncing state
         
@@ -141,14 +146,21 @@ def exportObjectCentered(name, path, center=True):
 def exportSelectedToFBX(path):
     """ export selection to file specified by `path`
 
-    fbx settings will be set from `fbxSettings` preset file
+    fbx settings will be set from preset file
     """
     # TODO: fbxExportPreset should be Editor-specific
     if os.path.exists(path):
         os.remove(path) 
-    sfpath = m2u.core.getM2uBasePath()+"/fbxExportPreset.cfg"
-    lsfcmd = "FBXLoadExportPresetFile -f %s"
-    expcmd = "FBXExport -f \"%s\" -s" % path.replace("\\","/")
+    sfpath = m2u.core.getPipeline().getFBXSettingsFile()
+    _lg.debug("settings file path is: "+sfpath)
+    lsfcmd = "FBXLoadExportPresetFile -f \"%s\";" % sfpath
+    pm.mel.eval(lsfcmd)
+    _lg.debug("Exporting File: "+path)
+    # maya's FBX command is not able to create directories, so we let python do that
+    directory = os.path.dirname(path)
+    m2u.core.getPipeline().makeSurePathExists(directory)
+    expcmd = "FBXExport -f \"%s\" -s;" % path.replace("\\","/")
+    pm.mel.eval(expcmd)
 
 
 
@@ -203,6 +215,13 @@ def sendSelectedToEdAsNew():
     The UI should give the user the option to seperate that auto-collection again.
 
     """
+    # the most simple approach for now is to empty the "AssetPath" attribute
+    # on all the selected objects and call sendSelectedToEd. The automation
+    # will then do what we want.
+    # TODO: integrate that functionality in the sendSelecteToEd function, because
+    # that will loop over all selected objects anyway.
+    selectedObjects = pm.selected(type="transform")
+    
     pass
 
 
@@ -282,7 +301,9 @@ def sendSelectedToEd():
         meshShapes = pm.listRelatives(obj, shapes=True, type="mesh")
         if len(meshShapes)>0:
             selectedMeshes.append(obj)
+    _lg.debug("found %i selected meshes" % len(selectedMeshes))
     # TODO: maybe filter other transferable stuff like lights or so
+    
     #2. for each object get the "AssetPath" attribute
     untaggedList = list()
     taggedDict = {}
@@ -298,7 +319,9 @@ def sendSelectedToEd():
         else:
             # unknown asset, we will handle those later
             untaggedList.append(obj)
-
+    _lg.debug("found %i untagged" % len(untaggedList))
+    _lg.debug("found %i tagged" % len(taggedDict))
+    
     #3. do the geometry check for tagged objects
     #   this assembles the taggedUniqueDict
     taggedDiscrepancyDetected = False
@@ -310,7 +333,7 @@ def sendSelectedToEd():
             taggedUniqueDict[obj]=[]
             # compare this object against all others in the list.
             for otherObj in lis[1:]:
-                if pm.polyCompare(obj, otherObj, vertices=True):
+                if 0 == pm.polyCompare(obj, otherObj, vertices=True):
                     # if the geometry matches, add the other to the unique list
                     # with this object as key, and remove from the old list
                     taggedUniqueDict[obj].append(otherObj)
@@ -318,35 +341,41 @@ def sendSelectedToEd():
                 else:
                     taggedDiscrepancyDetected = True
             lis.remove(obj) # we are done with this object too
-        
+    _lg.debug("found %i tagged uniques" % len(taggedUniqueDict))
+    
     #3. do the geometry check for untagged objects
     untaggedUniquesDetected = False
     while len(untaggedList)>0:
         obj = untaggedList[0]
-        if ! obj.hasAttr("AssetPath"):
+        if not obj.hasAttr("AssetPath"):
             pm.addAttr(obj.name(), longName="AssetPath", dataType="string",
                        keyable=False)
         foundUniqueForMe = False
         # compare against one of the tagged uniques
         for other in taggedUniqueDict.keys():
             # if that geometry matches, we found the unique for this obj
-            if pm.polyCompare(obj, other, vertices=True):
+            if 0 == pm.polyCompare(obj, other, vertices=True):
                 taggedUniqueDict[other].append(obj)
                 # set "AssetPath" attr to match that of the unique
                 obj.attr("AssetPath").set(other.attr("AssetPath").get())
                 # we are done with this object
                 untaggedList.remove(obj)
                 foundUniqueForMe = True
+                _lg.debug("found a unique key (%s) for %s" %(other.name(), obj.name()))
+                break
         
         if not foundUniqueForMe:
             untaggedUniquesDetected = True
             # make this a new unique, simply take the objects name as AssetPath
-            obj.attr("AssetPath").set(obj.shortName())
+            npath = obj.shortName() + "_AutoExport" + ".fbx"
+            obj.attr("AssetPath").set(npath)
             taggedUniqueDict[obj]=[]
             untaggedList.remove(obj)
+            _lg.debug("assuming new untagged unique: "+obj.shortName())
             # we will automatically compare to all other untagged to find
             # members for our new unique in the next loop iteration
-
+    _lg.debug("found %i uniques (with untagged)" % len(taggedUniqueDict))
+    
     # TODO: 4. UI-stuff...
     #4. if taggedDiscrepancy or untaggedUniques were detected,
     # list all uniques in the UI and let the user change names
@@ -362,21 +391,23 @@ def sendSelectedToEd():
         
     #6. tell the editor to import all the uniques
     fileList = []
-    for obj in tagedUniqueDict.keys():
+    for obj in taggedUniqueDict.keys():
         fileList.append(obj.attr("AssetPath").get())
     m2u.core.getEditor().importAssetsBatch(fileList)
         
     #7. tell the editor to assemble the scene
+    objInfoList = []
     for obj in selectedMeshes:
         # TODO: make that a new function
         objInfo = ObjectInfo(name = obj.shortName(), typeInternal = "mesh",
                              typeCommon = "mesh")
-        objTransforms = mayaObjectTracker.getTransformationFromObj(obj)
+        objTransforms = m2u.maya.mayaObjectTracker.getTransformationFromObj(obj)
         objInfo.pos = objTransforms[0]
         objInfo.rot = objTransforms[1]
         objInfo.scale = objTransforms[2]
         objInfo.AssetPath = obj.attr("AssetPath").get()
-        m2u.core.getEditor().
+        objInfoList.append(objInfo)
+    m2u.core.getEditor().addActorBatch(objInfoList)
     #TODO: add support for lights and so on
 
 

@@ -17,10 +17,31 @@ m2u from within your pipeline and do the whole initialization yourself.
 
 """
 
+import os
+import m2u
 from m2u.pipeline import pipeFileSystem as _fs
 
 getTempFolder = _fs.getTempFolder
 getProjectExportDir = _fs.getProjectExportDir
+
+def makeSurePathExists(path):
+    # http://stackoverflow.com/questions/273192/check-if-a-directory-exists-and-create-it-if-necessary
+    if not os.path.exists(path):
+        try: 
+            os.makedirs(path)
+        except OSError:
+            if not os.path.isdir(path):
+                raise
+
+
+def getFBXSettingsFile():
+    """ return the fbx-settings file path for the current used editor
+    """
+    ed = m2u.core.getEditor()
+    eddir = os.path.abspath(ed.__file__)
+    eddir = os.path.dirname(eddir)
+    return eddir+"/ue4FBXSettings.fbxexportpreset"
+
 
 def getSpecificPipelineFor(programName):
     """ returns a module with program-specific pipeline tasks for the given

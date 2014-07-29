@@ -4,6 +4,8 @@ commands will be issued by sending messages to the TCP port through :mod:`ue4Con
 
 """
 
+import os
+
 from m2u.helper.ObjectInfo import ObjectInfo
 from m2u.ue4 import ue4Conn
 
@@ -183,6 +185,7 @@ def addActorBatch(assetList):
     for objInfo in assetList:
         line = objectInfoToString(objInfo)
         msg = msg +"\n" + line
+    _lg.debug("assembled add batch command: "+msg)
     ue4Conn.sendMessage(msg)
 
 
@@ -197,5 +200,14 @@ def objectInfoToString(objInfo):
     T = "" if t is None else ("T=(%f %f %f)" % (t[0], t[1], t[2]))
     R = "" if r is None else ("R=(%f %f %f)" % (r[0], r[1], r[2]))
     S = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
-    text = objInfo.AssetPath+" "+objInfo.name+" "+T+" "+R+" "+S
+    assP = internalAssetPathFromAssetFilePath(objInfo.AssetPath)
+    text = assP+" "+objInfo.name+" "+T+" "+R+" "+S
     return text
+
+def internalAssetPathFromAssetFilePath(assetPath):
+    rpath,ext = os.path.splitext(assetPath)
+    if not rpath.startswith("/") and len(rpath)>0:
+        rpath = "/"+rpath
+    assP = "/Game"+rpath
+    assP.replace("//","/")
+    return assP
