@@ -74,6 +74,8 @@ hideSelected = _v.hideSelected
 unhideSelected = _v.unhideSelected
 isolateSelected = _v.isolateSelected
 unhideAll = _v.unhideAll
+hideByNames = _v.hideByNames
+#unhideByNames = _v.unhideByNames
 
 # -- Camera --
 transformCamera = _c.transformCamera

@@ -10,7 +10,7 @@ _s = None # the socket
 
 def connectToUEd(*args):
     if len(args)<2:
-        print "no TCP-endpoint specified, using localhost, 3939"
+        print "no TCP-endpoint specified, using localhost:3939"
         _openConnection()
     else:
         _openConnection(args)
@@ -18,6 +18,7 @@ def connectToUEd(*args):
 def _openConnection(TCP_IP = '127.0.0.1', TCP_PORT=3939):
     BUFFER_SIZE = 1024
     global _s
+    closeConnection() # make sure the address is freed if we have an old connection
     
     _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     _s.connect((TCP_IP, TCP_PORT))
@@ -41,8 +42,8 @@ def _receiveMessage():
     return data
 
 def closeConnection():
-    print "Closing connection"
     global _s
     if _s is not None:
+        print "Closing connection"
         _s.close()
         _s = None

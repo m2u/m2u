@@ -181,6 +181,9 @@ def sendSelectedToEdOverwrite():
 
     : we might do a file-date check bevor overwrite?
     does that make sense?
+
+    we should replace all geometry in maya of objects with the same
+    asset path with the geometry of the new object after the export
     
     """
     pass
@@ -217,7 +220,7 @@ def sendSelectedToEdAsNew():
     """
     # the most simple approach for now is to empty the "AssetPath" attribute
     # on all the selected objects and call sendSelectedToEd. The automation
-    # will then do what we want.
+    # will then do what we want. (as soon as it checks for existing files)
     # TODO: integrate that functionality in the sendSelecteToEd function, because
     # that will loop over all selected objects anyway.
     selectedObjects = pm.selected(type="transform")

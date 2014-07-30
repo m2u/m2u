@@ -53,6 +53,7 @@ def createUI():
     global m2uwin
     if m2uwin is not None:
         pm.deleteUI(m2uwin, window=True)
+        m2uwin = None
     
     v = m2u.getVersion()
     m2uwin = pm.window( title="m2u "+v+" (maya)", iconName='m2u',
