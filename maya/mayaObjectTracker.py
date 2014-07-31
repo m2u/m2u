@@ -148,12 +148,21 @@ def getTransformationFromObj(obj):
     rotation order conversion for the axis-up-space that is set in maya
     or the UI.
 
+    TODO:
+    currently conversion from maya to UDK/UE4 space is hard coded here.
+    This will not work for Unity and the like. This functionality has to
+    be reworked.
+
     """
     # if the engine supports nested transforms, world-space transforms
     # will mess up the result
     useWorldSpace = not m2u.core.getEditor().supportsParenting()
     
-    tx,ty,tz = pm.xform(obj,query=True, ws=useWorldSpace, t=True)
+    # the translate values in the matrix will always reflect the TRUE translation
+    # while parenting and pivots mess up the the other results
+    mat = pm.xform(obj, query=True, m = True, ws = useWorldSpace )
+    #tx,ty,tz = pm.xform(obj,query=True, ws=useWorldSpace, t=True)
+    tx, ty, tz = (mat[12],mat[13],mat[14])
     #tx,ty,tz = translationMayaToUDK(t)
     #tx,ty,tz = (-tz,tx,ty) # y-up
     #tx,ty,tz = (ty,tx,tz) # z-up
