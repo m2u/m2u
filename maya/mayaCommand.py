@@ -116,6 +116,10 @@ def exportObjectAsAsset(name, path):
     exportObjectCentered(name, fullpath, center=True)
 
 
+identity = [1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0]
 # TODO: move to maya-specific pipeline-file
 def exportObjectCentered(name, path, center=True):
     """ export object `name` to FBX file specified by `path`
@@ -130,9 +134,10 @@ def exportObjectCentered(name, path, center=True):
     prog.setObjectSyncing(False) # so our move command won't be reflected in Ed
     
     pm.select(name, r=True)
-    mat = pm.xform(query=True, ws=True, m=True) # backup matrix
     if center:
-        pm.xform( name, a=True, ws=True, t=(0,0,0), ro=(0,0,0), s=(1,1,1))
+        mat = pm.xform(query=True, ws=True, m=True) # backup matrix
+        pm.xform( name, a=True, ws=True, m = identity)
+        #pm.makeIdentity(name)
     
     exportSelectedToFBX(path)
     

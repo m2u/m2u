@@ -54,6 +54,36 @@ _onObjectCreatedCBid = None
 _onObjectDeletedCBid = None
 _onParentChangedCBid=None
 
+def getObjectSyncingState():
+    """ which object trackers are active
+    returns a dictionary with name:bool pairs that can be fed back into the
+    func:`setObjectSyncingState()` function.
+    """
+    states = { "selection" : False if _onSelectionChangedCBid is None else True,
+               "duplicate" : False if _onBeforeDuplicateCBid is None else True,
+               "name" : False if _onNameChangedCBid is None else True,
+               "existence" : False if _onObjectDeletedCBid is None else True,
+               "relationship" : False if _onParentChangedCBid is None else True
+    }
+    return states
+
+
+def setObjectSyncingState(**kwargs):
+    """ activate or disable specific trackers
+    """
+    if "selection" in kwargs.keys():
+        createSelectionTracker() if kwargs["selection"] else deleteSelectionTracker()
+    if "duplicate" in kwargs.keys():
+        createDuplicateTracker() if kwargs["duplicate"] else deleteDuplicateTracker()
+    if "name" in kwargs.keys():
+        createNameTracker() if kwargs["name"] else deleteNameTracker()
+    if "existence" in kwargs.keys():
+        createExistenceTracker() if kwargs["existence"] else deleteExistenceTracker()
+    if "relationship" in kwargs.keys():
+        (createRelationshipTracker() if kwargs["relationship"]
+         else deleteRelationshipTracker())
+
+
 # some callback functions expect a specific node to create a callback for
 # passing a nullMObject makes some of those functions track all nodes instead
 nullMObject = mapi.OpenMaya.MObject()
@@ -61,60 +91,90 @@ nullMObject = mapi.OpenMaya.MObject()
 def createObjectTracker():
     """ create all callbacks that track object-changes
     """
+    createSelectionTracker()
+    createDuplicateTracker()
+    createNameTracker()
+    createExistenceTracker()
+    createRelationshipTracker()
+
+def deleteObjectTracker():
+    """ delete all callbacks that track object-changes
+    """
+    deleteSelectionTracker()
+    deleteDuplicateTracker()
+    deleteNameTracker()
+    deleteExistenceTracker()
+    deleteRelationshipTracker()
+
+
+# these functions always delete old trackers before creating the new ones
+# just to make sure there aren't suddenly two callbacks doing the same
+# the alternative would be to check if the callbacks are None, but we suppose
+# we really want to create NEW callbacks for some reason, when calling these funcs
+def createSelectionTracker():
+    deleteSelectionTracker() 
     global _onSelectionChangedCBid
     _onSelectionChangedCBid = mapi.MEventMessage.addEventCallback(
-        "SelectionChanged", _onSelectionChangedCB)   
-    
-    global _onBeforeDuplicateCBid, _onAfterDuplicateCBid
-    _onBeforeDuplicateCBid = mapi.MModelMessage.addBeforeDuplicateCallback(
-        _onBeforeDuplicateCB)
-    _onAfterDuplicateCBid = mapi.MModelMessage.addAfterDuplicateCallback(
-        _onAfterDuplicateCB)
-    
-    global _onNameChangedCBid
-    _onNameChangedCBid = mapi.MNodeMessage.addNameChangedCallback( nullMObject,
-        _onNameChangedCB)
-    
-    global _onObjectCreatedCBid, _onObjectDeletedCBid
-    nodeType = "transform" # TODO: maybe use "dagObject" and filter afterwards
-    #_onObjectCreatedCBid = mapi.MDGMessage.addNodeAddedCallback(
-    #    _onObjectCreatedCB, nodeType)
-    _onObjectDeletedCBid = mapi.MDGMessage.addNodeRemovedCallback(
-        _onObjectDeletedCB, nodeType)
-    
-    global _onParentChangedCBid
-    #_onParentChangedCBid = mapi.MDagMessage.addAllDagChangesCallback(
-    _onParentChangedCBid = mapi.MDagMessage.addParentAddedCallback(
-        _onParentChangedCB)
-    
+        "SelectionChanged", _onSelectionChangedCB)
     # automatically create tracking script jobs on the current selection
     # but don't emit "selection changed" or it will be emitted very often during
     # tracking-disabling operations like duplication and name-changing
     #_onSelectionChangedCB(None)
     _createObjectScriptJobsNoSelChanged()
 
+def createDuplicateTracker():
+    deleteDuplicateTracker()
+    global _onBeforeDuplicateCBid, _onAfterDuplicateCBid
+    _onBeforeDuplicateCBid = mapi.MModelMessage.addBeforeDuplicateCallback(
+        _onBeforeDuplicateCB)
+    _onAfterDuplicateCBid = mapi.MModelMessage.addAfterDuplicateCallback(
+        _onAfterDuplicateCB)
 
-def deleteObjectTracker():
-    """ delete all callbacks that track object-changes
-    """
+def createNameTracker():
+    deleteNameTracker()
+    global _onNameChangedCBid
+    _onNameChangedCBid = mapi.MNodeMessage.addNameChangedCallback( nullMObject,
+        _onNameChangedCB)
+
+def createExistenceTracker():
+    deleteExistenceTracker()
+    global _onObjectCreatedCBid, _onObjectDeletedCBid
+    nodeType = "transform" # TODO: maybe use "dagObject" and filter afterwards
+    #_onObjectCreatedCBid = mapi.MDGMessage.addNodeAddedCallback(
+    #    _onObjectCreatedCB, nodeType)
+    _onObjectDeletedCBid = mapi.MDGMessage.addNodeRemovedCallback(
+        _onObjectDeletedCB, nodeType)
+
+def createRelationshipTracker():
+    deleteRelationshipTracker()
+    global _onParentChangedCBid
+    #_onParentChangedCBid = mapi.MDagMessage.addAllDagChangesCallback(
+    _onParentChangedCBid = mapi.MDagMessage.addParentAddedCallback(
+        _onParentChangedCB)
+
+
+def deleteSelectionTracker():
     global _onSelectionChangedCBid
     if _onSelectionChangedCBid is not None:
         _deleteObjectSJs()
         mapi.MEventMessage.removeCallback(_onSelectionChangedCBid)
         _onSelectionChangedCBid = None
-    
+
+def deleteDuplicateTracker():
     global _onAfterDuplicateCBid, _onBeforeDuplicateCBid
     if _onAfterDuplicateCBid is not None:
         mapi.MMessage.removeCallback(_onAfterDuplicateCBid)
         mapi.MMessage.removeCallback(_onBeforeDuplicateCBid)
         _onAfterDuplicateCBid = None
         _onBeforeDuplicateCBid = None
-    
+
+def deleteNameTracker():
     global _onNameChangedCBid
     if _onNameChangedCBid is not None:
         mapi.MMessage.removeCallback(_onNameChangedCBid)
         _onNameChangedCBid = None
-    
+
+def deleteExistenceTracker():
     global _onObjectCreatedCBid, _onObjectDeletedCBid
     if _onObjectCreatedCBid is not None:
         mapi.MMessage.removeCallback(_onObjectCreatedCBid)
@@ -122,7 +182,8 @@ def deleteObjectTracker():
     if _onObjectDeletedCBid is not None:
         mapi.MMessage.removeCallback(_onObjectDeletedCBid)
         _onObjectDeletedCBid = None
-    
+
+def deleteRelationshipTracker():
     global _onParentChangedCBid
     if _onParentChangedCBid is not None:
         mapi.MMessage.removeCallback(_onParentChangedCBid)
@@ -247,10 +308,17 @@ def _deleteObjectSJs():
 ########################
 
 _beforeDupSelection = None
+_beforeDupSyncState = None
 def _onBeforeDuplicateCB(data):
     """ save the selection to know which objects are going to be duplicated """
     global _beforeDupSelection
     _beforeDupSelection = pm.selected()
+    # we have to disable rename and parent tracking, so we don't try
+    # to make stuff with intermediate objects
+    global _beforeDupSyncState
+    _beforeDupSyncState = getObjectSyncingState()
+    setObjectSyncingState(name = False, selection = False, relationship = False)
+
 
 def _onAfterDuplicateCB(data):
     """ go through selection (the duplicated objects), get associated original
@@ -258,7 +326,6 @@ def _onAfterDuplicateCB(data):
     duplication.
 
     """
-    #print "afterDuplicateCB called"
     afterDupSel = pm.selected()
     if len(afterDupSel) != len(_beforeDupSelection):
         _lg.error(("could not sync duplication, originals and results "
@@ -268,25 +335,22 @@ def _onAfterDuplicateCB(data):
     for old, new in zip(_beforeDupSelection, afterDupSel):
         # TODO: check if (old) object exists in udk, if not return early
         t,r,s = getTransformationFromObj(new)
-        # now get an unused name from udk
+        # now get an unused name from the editor
         # if the names mismatch, we need to rename the object in maya
         # the name maya actually assigns to the object may change again
-        # so we need to do this until maya and udk use the same name
+        # so we need to do this until maya and the editor use the same name
         mName = str(new) # maya's Name
         uName = "" # Engine's Name
-        # disable object syncing so internal renames won't trigger a rename callback
-        wasObjectSyncing = m2u.core.getProgram().isObjectSyncing()
-        m2u.core.getProgram().setObjectSyncing(False)
         while True:
             uName = m2u.core.getEditor().getFreeName(mName)
             _lg.debug("Editor returned '"+uName+ "' as a free name.")
             #if uName is None: return
             if uName != mName:
-                _lg.debug("Name '%s' already in use, need to find a new one." % mName)
+                _lg.debug(("Name '%s' already in use, Maya needs to find"
+                           " a new one.") % mName)
                 mName = str(pm.rename(mName, uName))
             if uName == mName: # not 'else', because mName may have changed
                 break
-        m2u.core.getProgram().setObjectSyncing(wasObjectSyncing)
         code, edName = m2u.core.getEditor().duplicateObject(str(old), uName, t, r, s)
         # TODO: maybe check the return value of duplicateObject call
         # since we changed the name, we need to select the renamed object or
@@ -296,14 +360,15 @@ def _onAfterDuplicateCB(data):
         
         # this should not happen, because we use getFreeName beforehand
         if code == 3:
-            _lg.error( "Renaming the duplicate failed, maya object %s and "
-                       "engine object %s are now desynced" % (mName, edName) )
+            _lg.error(("Renaming the duplicate failed, maya object %s and "
+                       "engine object %s are now desynced") % (mName, edName) )
         
         # select waehrend duplicate aufrufen killt den transform wert fuer smart
         # stattdessen muesste entweder ein reselect nach allen duplicates sein
         # ob das geht? oder rename erst nach dem die duplicates erledigt sind
         # duerfte mit dem duplicate callback aber auch problematisch sein
     #pm.select(reselectNamesList, r=True)
+    setObjectSyncingState(**_beforeDupSyncState)
 
 
 ########################
@@ -315,7 +380,8 @@ def _onNameChangedCB(node, prevName, data):
     typeName = mfnnode.typeName()
     
     # we are not interested in renamed shapes or so
-    if (not typeName == "transform") or (not typeName == "displayLayer"): 
+    if (not typeName == "transform") and (not typeName == "displayLayer"):
+        #_lg.debug("Not tracking objects of type: %s" % typeName )
         return
     
     newName = str(mfnnode.name())
@@ -340,8 +406,10 @@ def _onNameChangedCB(node, prevName, data):
     mName = newName # maya's Name
     uName = "" # Engine's Name
     # disable object syncing so internal renames won't trigger a new rename callback
-    wasObjectSyncing = m2u.core.getProgram().isObjectSyncing()
-    m2u.core.getProgram().setObjectSyncing(False)
+    #wasObjectSyncing = m2u.core.getProgram().isObjectSyncing()
+    #m2u.core.getProgram().setObjectSyncing(False)
+    backupSyncState = getObjectSyncingState()
+    setObjectSyncingState(name=False)
     while True:
         uName = m2u.core.getEditor().getFreeName(mName)
         _lg.debug("Editor returned '"+uName+ "' as a free name.")
@@ -351,7 +419,8 @@ def _onNameChangedCB(node, prevName, data):
             mName = str(pm.rename(mName, uName))
         if uName == mName: # not 'else', because mName may have changed
             break
-    m2u.core.getProgram().setObjectSyncing(wasObjectSyncing)
+    #m2u.core.getProgram().setObjectSyncing(wasObjectSyncing)
+    setObjectSyncingState(**backupSyncState)
     code,edName = m2u.core.getEditor().renameObject(prevName, mName)
     if code is True: # no problems occured
         return
