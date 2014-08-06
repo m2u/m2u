@@ -125,8 +125,8 @@ def _createLayerScriptJob(layer):
 
 
 def onLayerChangedSJ(obj):
-    if not obj.exists():
-        return
+    #if not pm.general.objExists(obj)
+    #    return
     vis = pm.getAttr(obj+".visibility")
     if vis:
         m2u.core.getEditor().unhideLayer(obj)
@@ -171,21 +171,18 @@ def _onNameChangedCB(node, prevName, data):
     global _nameTrackingDisabledInternally
     while True:
         if _nameTrackingDisabledInternally:
-            _lg.debug("layer name tracking disabled internally")
-            #return
+            #_lg.debug("layer name tracking disabled internally")
             break
         
         mfnnode = mapi.MFnDependencyNode(node)
         typeName = mfnnode.typeName()
         
         if (not typeName == "displayLayer"):
-            #return
             break
         
         newName = str(mfnnode.name())
-        _lg.debug("pre check renamed layer '"+prevName+"' to '"+newName+"'")
+        #_lg.debug("pre check renamed layer '"+prevName+"' to '"+newName+"'")
         if "#" in newName: # those are only temporary name changes to create numbers
-            #return
             break
         if len(prevName) == 0:
             # the empty string is a sign that a new layer has been created.
@@ -193,12 +190,10 @@ def _onNameChangedCB(node, prevName, data):
             # changes to be propagated, so we disable name tracking here. It will be
             # enabled again at the end of the _onCreateDisplayLayer function.
             _nameTrackingDisabledInternally = True
-            _lg.debug("old layer name was empty, disabling name tracking")
-            #return
+            #_lg.debug("old layer name was empty, disabling name tracking")
             break
             
         if prevName == newName: #nothing changes really
-            #return
             break
         
         _lg.debug("renamed layer '"+prevName+"' to '"+newName+"'")
@@ -233,20 +228,21 @@ def _onCreateDisplayLayer(cmd):
 
     while True:
         if "-empty" in cmd: # yeah, not interested in empty layers
-            #return
             break
         
         sel = pm.selected()
         if len(sel)<1: # there was no selection, so it was an empty layer too
-            #return
             break
+        
         obj = sel[0]
         layers = obj.listConnections(type="displayLayer")
         layer = layers[0]
         objects = [x.name() for x in sel]
         _lg.debug("new layer is '"+layer.name()+"' with objects "+str(objects))
         m2u.core.getEditor().addObjectsToLayer(layer, objects, True)
+        
         break
+    
     global _nameTrackingDisabledInternally
     _nameTrackingDisabledInternally = False
     _createAllLayerScriptJobs()

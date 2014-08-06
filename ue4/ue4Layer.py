@@ -26,7 +26,6 @@ def addObjectsToLayer(layerName, objList, removeFromOthers=True):
     names = "["+(','.join(objList))+"]"
     msg = ("AddObjectsToLayer "+layerName+" "+names+
            " RemoveFromOthers="+str(removeFromOthers))
-    print "msg is: "+msg
     return ue4Conn.sendMessage(msg)
 
 
@@ -38,13 +37,11 @@ def addObjectsToLayer(layerName, objList, removeFromOthers=True):
 def removeObjectsFromAllLayers(objList):
     names = "["+(','.join(objList))+"]"
     msg = ("RemoveObjectsFromAllLayers "+names)
-    print "msg is: "+msg
     return ue4Conn.sendMessage(msg)
 
 
 def renameLayer(oldName, newName):
     msg = ("RenameLayer "+oldName+" "+newName)
-    print "msg is: "+msg
     return ue4Conn.sendMessage(msg)
 
 #def createLayer(layerName):
@@ -54,17 +51,15 @@ def renameLayer(oldName, newName):
 
 def deleteLayer(layerName):
     msg = ("DeleteLayer "+layerName)
-    print "msg is: "+msg
     return ue4Conn.sendMessage(msg)
 
 
 def hideLayer(layerName):
     msg = ("HideLayer "+layerName)
-    print "msg is: "+msg
     return ue4Conn.sendMessage(msg)
 
 
 def unhideLayer(layerName):
     msg = ("UnhideLayer "+layerName)
-    print "msg is: "+msg
     return ue4Conn.sendMessage(msg)
+
