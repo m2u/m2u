@@ -46,12 +46,11 @@ def deleteVisibilityTracker():
         mapi.MMessage.removeCallback(_onCommandExecutedCBid)
         _onCommandExecutedCBid = None
 
-# NOTE: this is currently the only application for a CommandCallback
+# NOTE: for CommandCallback
 # Since calling more and more functions with all the same callback string can reduce
 # performance significantly, there should only be ONE CommandCallback for all
-# of m2u. If there will be more actions requiring a CommandCallback, we should
-# move this callback to some common file and register only the functions for specific
-# strings.
+# of m2u. Wwe should move this callback to some common file and register only the
+# functions for specific strings.
 def _onCommandExecutedCB(cmd, data):
     if cmd.startswith("hide"):
         _onHide(cmd)
@@ -81,7 +80,7 @@ def _onHide(cmd):
         # If the selection list is empty, hide selected was called.
         # If the selection list contains visible objects, hide unselected was called.
         # If the selection list contains only invisible objects, hide selected.
-        # The problem with hiding selected, is that maya deselects the objects
+        # The problem with hiding selected is, that maya deselects the objects
         # before this callback is called, so we have no way of knowing when to disable
         # the syncing. The target Editor will ALWAYS receive the deselect command
         # before we can send the hideSelected command.

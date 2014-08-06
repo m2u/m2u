@@ -28,6 +28,7 @@ Since the path to this module may change, it is easier to get the
 real path at runtime instead of hardcoding something.
 """
 
+
 ############################
 # tracking setup functions #
 ############################
@@ -380,7 +381,7 @@ def _onNameChangedCB(node, prevName, data):
     typeName = mfnnode.typeName()
     
     # we are not interested in renamed shapes or so
-    if (not typeName == "transform") and (not typeName == "displayLayer"):
+    if (not typeName == "transform"):
         #_lg.debug("Not tracking objects of type: %s" % typeName )
         return
     
@@ -393,21 +394,12 @@ def _onNameChangedCB(node, prevName, data):
     #print "type is %s" % typeName
     if prevName == newName: #nothing changes really
         return
-    
-    
-    #    _onNameChangedTransformNode(newName, prevName, data)
-    #elif typeName == "displayLayer":
-    #    _onNameChangedDisplayLayer(newName, prevName, data)
-#def _onNameChangedTransformNode(newName, prevName, data):
-#    """ called whenever a transform-node's name was changed
-#    """   
+        
     # TODO: delegate the name-finding functionality to a common function for
     # this and the duplicate callback
     mName = newName # maya's Name
     uName = "" # Engine's Name
     # disable object syncing so internal renames won't trigger a new rename callback
-    #wasObjectSyncing = m2u.core.getProgram().isObjectSyncing()
-    #m2u.core.getProgram().setObjectSyncing(False)
     backupSyncState = getObjectSyncingState()
     setObjectSyncingState(name=False)
     while True:
@@ -419,7 +411,6 @@ def _onNameChangedCB(node, prevName, data):
             mName = str(pm.rename(mName, uName))
         if uName == mName: # not 'else', because mName may have changed
             break
-    #m2u.core.getProgram().setObjectSyncing(wasObjectSyncing)
     setObjectSyncingState(**backupSyncState)
     code,edName = m2u.core.getEditor().renameObject(prevName, mName)
     if code is True: # no problems occured
@@ -434,18 +425,12 @@ def _onNameChangedCB(node, prevName, data):
                % (mName, edName) )
 
 
-#def _onNameChangedDisplayLayer(newName, prevName, data):
-#    """ called whenever a displayLayer-node's name was changed
-#    """
-#    #m2u.core.getEditor().renameLayer(prevName, newName)
-#    pass
-
 ##################################
 # creation and deletion tracking #
 ##################################
 
 def _onObjectDeletedCB(node, data):
-    """ called everytime a node is deleted """
+    """ called everytime a (transform) node is deleted """
     mfnnode = mapi.MFnDependencyNode(node)
     name = str(mfnnode.name())
     _lg.debug("maya deleted object %s" % name)

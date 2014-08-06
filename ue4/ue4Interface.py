@@ -21,6 +21,7 @@ from m2u.ue4 import ue4Selection as _s #selection
 from m2u.ue4 import ue4Command as _a #editing
 from m2u.ue4 import ue4Visibility as _v #visibility
 from m2u.ue4 import ue4Command as _c #other commands
+from m2u.ue4 import ue4Layer as _l #layer
 from m2u.ue4 import ue4Export
 from m2u.ue4 import ue4Import as _i
 
@@ -76,6 +77,14 @@ isolateSelected = _v.isolateSelected
 unhideAll = _v.unhideAll
 hideByNames = _v.hideByNames
 #unhideByNames = _v.unhideByNames
+
+# -- Layer --
+addObjectsToLayer = _l.addObjectsToLayer
+removeObjectsFromAllLayers = _l.removeObjectsFromAllLayers
+renameLayer = _l.renameLayer
+deleteLayer = _l.deleteLayer
+hideLayer = _l.hideLayer
+unhideLayer = _l.unhideLayer
 
 # -- Camera --
 transformCamera = _c.transformCamera

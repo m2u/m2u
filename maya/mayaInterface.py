@@ -16,22 +16,6 @@ you may access functionality in submodules instead and circumvent the Interface.
 
 A Program Interface provides the following functionality:
 
-General Functionality
----------------------
-- getName
-
-Camera
-------
-- setCameraSyncing
-- isCameraSyncing
-- setupCamera
-- setCameraFOV
-
-Objects
--------
-- setObjectSyncing
-- isObjectSyncing
-
 """
 
 # note: import m2u.maya.mayaCommand as _cmd
@@ -42,6 +26,7 @@ from m2u.maya import mayaCamera as _cam
 from m2u.maya import mayaObjectTracker as _obj
 from m2u.maya import mayaVisibilityTracker as _vis
 from m2u.maya import mayaSceneTracker as _sc
+from m2u.maya import mayaLayerTracker as _la
 
 # -- General --
 def getName():
@@ -60,6 +45,10 @@ isObjectSyncing = _obj.isObjectSyncing
 # -- Visibility --
 setVisibilitySyncing = _vis.setVisibilitySyncing
 isVisibilitySyncing = _vis.isVisibilitySyncing
+
+# -- Layer --
+setLayerSyncing = _la.setLayerSyncing
+isLayerSyncing = _la.isLayerSyncing
 
 # TODO: move to pipeline file or so
 importFile = _cmd.importFile
