@@ -26,7 +26,6 @@ def transformObject(objName, t=None, r=None, s=None):
     R = "" if r is None else ("R=(%f %f %f)" % (r[0], r[1], r[2]))
     S = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
     msg = ("TransformObject "+objName+" "+T+" "+R+" "+S)
-    print "msg = "+msg
     ue4Conn.sendMessage(msg)
 
 

@@ -280,34 +280,43 @@ def _createObjectScriptJobsNoSelChanged():
     # that are children of the selected objects in maya are explicitly synced
     # if parenting is possible, the transforms will be implicitly synced because
     # they are relative to the parent in the Engine anyway.
-
-    completeObjList = pm.selected()
+    
+    # We need to filter out objects that are selected and have parents selected
+    # since we will sync all children of selected objects, those objects would be
+    # double-synced otherwise.
+    # NOTE: it may be faster to double-sync some objects than to check long lists
+    # of child objects... 
+    sel = pm.selected()
+    onlyParentList = sel
     if not m2u.core.getEditor().supportsParenting():
-        for obj in pm.selected():
+        for obj in sel:
             children = pm.listRelatives(obj, allDescendents = True,
                                         noIntermediate = True, type="transform")
-            completeObjList.extend(children)
+            for child in children:
+                if child in sel:
+                    onlyParentList.remove(child)
             
-    print "completeObjList: "+str(completeObjList)
-    completeObjSet = set(completeObjList)
-    print "completeObjSet: "+str(completeObjSet)
-    for obj in completeObjSet:
+    print "onlyParentList: "+str(onlyParentList)
+    for obj in onlyParentList:
         # only track transform-nodes
         if obj.nodeType() != "transform":
             continue
         #since the sj is in maya namespace, we need the full qualifier to onObjChanged
-        sj = pm.scriptJob( attributeChange=[obj.name()+'.rotatePivot',
+        sj = pm.scriptJob( attributeChange=[obj.name()+'.matrix',
                 __name__+".onObjectChangedSJ(\""+obj.name()+"\")"] )
         _objectScriptJobs.append(sj)
-        #sj = pm.scriptJob( attributeChange=[obj.name()+'.parentMatrix',
-        #        __name__+".onObjectChangedSJ(\""+obj.name()+"\")"] )
-        #_objectScriptJobs.append(sj)
 
 
 def onObjectChangedSJ(obj):
-    t,r,s = __thismodule.getTransformationFromObj(obj)
-    m2u.core.getEditor().transformObject(obj, t, r, s)
-    #m2u.core.getEditor().transformObject(obj,(tx,ty,tz),(rx,ry,rz),(sx,sy,sz))
+    allDepObjs = [obj]
+    if not m2u.core.getEditor().supportsParenting():
+        children = pm.listRelatives(obj, allDescendents = True,
+                                        noIntermediate = True, type="transform")
+        allDepObjs.extend(children)
+    for node in allDepObjs:
+        t,r,s = __thismodule.getTransformationFromObj(node)
+        m2u.core.getEditor().transformObject(node, t, r, s)
+        #m2u.core.getEditor().transformObject(obj,(tx,ty,tz),(rx,ry,rz),(sx,sy,sz))
 
 
 def _deleteObjectSJs():
