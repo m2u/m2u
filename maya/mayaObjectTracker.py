@@ -260,18 +260,14 @@ def getTransformationFromObj(obj):
 
 _objectScriptJobs = list()
 def _onSelectionChangedCB(data):
-    global _objectScriptJobs
-    _deleteObjectSJs()
+    """ create the object tracking script jobs and tell the editor to update the
+    selection.
+    """
     m2u.core.getEditor().deselectAll()
+    _createObjectScriptJobsNoSelChanged()
     for obj in pm.selected():
-        # only track transform-nodes
-        if obj.nodeType() != "transform":
-            continue
-        #since the sj is in maya namespace, we need the full qualifier to onObjChanged
-        sj = pm.scriptJob( attributeChange=[obj.name()+'.inverseMatrix',
-                __name__+".onObjectChangedSJ(\""+obj.name()+"\")"] )
-        _objectScriptJobs.append(sj)
         m2u.core.getEditor().selectByNames([obj.name()])
+
 
 def _createObjectScriptJobsNoSelChanged():
     """ create the object tracking script jobs without emitting a selection changed
@@ -280,14 +276,32 @@ def _createObjectScriptJobsNoSelChanged():
     global _objectScriptJobs
     _deleteObjectSJs()
     
-    for obj in pm.selected():
+    # If we can NOT use parenting, we need to make sure all the objects
+    # that are children of the selected objects in maya are explicitly synced
+    # if parenting is possible, the transforms will be implicitly synced because
+    # they are relative to the parent in the Engine anyway.
+
+    completeObjList = pm.selected()
+    if not m2u.core.getEditor().supportsParenting():
+        for obj in pm.selected():
+            children = pm.listRelatives(obj, allDescendents = True,
+                                        noIntermediate = True, type="transform")
+            completeObjList.extend(children)
+            
+    print "completeObjList: "+str(completeObjList)
+    completeObjSet = set(completeObjList)
+    print "completeObjSet: "+str(completeObjSet)
+    for obj in completeObjSet:
         # only track transform-nodes
         if obj.nodeType() != "transform":
             continue
         #since the sj is in maya namespace, we need the full qualifier to onObjChanged
-        sj = pm.scriptJob( attributeChange=[obj.name()+'.inverseMatrix',
+        sj = pm.scriptJob( attributeChange=[obj.name()+'.rotatePivot',
                 __name__+".onObjectChangedSJ(\""+obj.name()+"\")"] )
         _objectScriptJobs.append(sj)
+        #sj = pm.scriptJob( attributeChange=[obj.name()+'.parentMatrix',
+        #        __name__+".onObjectChangedSJ(\""+obj.name()+"\")"] )
+        #_objectScriptJobs.append(sj)
 
 
 def onObjectChangedSJ(obj):

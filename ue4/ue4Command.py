@@ -26,6 +26,7 @@ def transformObject(objName, t=None, r=None, s=None):
     R = "" if r is None else ("R=(%f %f %f)" % (r[0], r[1], r[2]))
     S = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
     msg = ("TransformObject "+objName+" "+T+" "+R+" "+S)
+    print "msg = "+msg
     ue4Conn.sendMessage(msg)
 
 
@@ -170,6 +171,9 @@ def parentChildTo(childName, parentName):
     if parentName is an empty string or None, will parent to the world
 
     """
+    # TODO: parenting functionality by user choice here or in program?
+    if not m2u.core.getEditor().supportsParenting():
+        return
     msg = ("ParentChildTo "+childName)
     if (parentName is not None) and (parentName !=''):
         msg = msg + " " + parentName

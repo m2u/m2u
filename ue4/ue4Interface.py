@@ -33,7 +33,8 @@ def supportsParenting():
     """ if this Engine supports parenting of objects
     aka nesting of transforms or attaching
     """
-    return True
+    # TODO: parenting, enable when I've got an option for empty transforms in UE4
+    return False
 
 
 # TODO: maybe this shouldn't be necessary
