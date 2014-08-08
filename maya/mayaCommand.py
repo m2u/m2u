@@ -158,7 +158,7 @@ def exportSelectedToFBX(path):
         os.remove(path) 
     sfpath = m2u.core.getPipeline().getFBXSettingsFile()
     _lg.debug("settings file path is: "+sfpath)
-    lsfcmd = "FBXLoadExportPresetFile -f \"%s\";" % sfpath
+    lsfcmd = "FBXLoadExportPresetFile -f \"%s\";" % sfpath.replace("\\","/")
     pm.mel.eval(lsfcmd)
     _lg.debug("Exporting File: "+path)
     # maya's FBX command is not able to create directories, so we let python do that
