@@ -170,6 +170,9 @@ def parentChildTo(childName, parentName):
     if parentName is an empty string or None, will parent to the world
 
     """
+    # TODO: parenting functionality by user choice here or in program?
+    if not m2u.core.getEditor().supportsParenting():
+        return
     msg = ("ParentChildTo "+childName)
     if (parentName is not None) and (parentName !=''):
         msg = msg + " " + parentName

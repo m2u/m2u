@@ -46,12 +46,11 @@ def deleteVisibilityTracker():
         mapi.MMessage.removeCallback(_onCommandExecutedCBid)
         _onCommandExecutedCBid = None
 
-# NOTE: this is currently the only application for a CommandCallback
+# NOTE: for CommandCallback
 # Since calling more and more functions with all the same callback string can reduce
 # performance significantly, there should only be ONE CommandCallback for all
-# of m2u. If there will be more actions requiring a CommandCallback, we should
-# move this callback to some common file and register only the functions for specific
-# strings.
+# of m2u. Wwe should move this callback to some common file and register only the
+# functions for specific strings.
 def _onCommandExecutedCB(cmd, data):
     if cmd.startswith("hide"):
         _onHide(cmd)
@@ -66,14 +65,13 @@ def _onHide(cmd):
     # hide all
     if "-all" in cmd:
         #m2u.core.getEditor().hideAll()
-        pass
+        return
     
     # hide list of objects
-    elif "{" in cmd:
+    listStart = cmd.find("{")
+    if listStart > -1: 
         # HACK:
-        # we don't parse the whole list of selected objects, that would mean we
-        # would have to hide every object "by hand" in the Engine.
-        # Instead we check if the current selection is empty or not.
+        # We check if the current selection is empty or not.
         # Normally hiding the selected will empty the list, because all visible
         # objects that turn invisible will get deselected.
         # There is the case, where already hidden objects are selected. Those won't
@@ -82,18 +80,28 @@ def _onHide(cmd):
         # If the selection list is empty, hide selected was called.
         # If the selection list contains visible objects, hide unselected was called.
         # If the selection list contains only invisible objects, hide selected.
-        
+        # The problem with hiding selected is, that maya deselects the objects
+        # before this callback is called, so we have no way of knowing when to disable
+        # the syncing. The target Editor will ALWAYS receive the deselect command
+        # before we can send the hideSelected command.
+        # Thus hideSelected is not possible when syncing selection. To get around this
+        # we have to make a collection of objects to hide (they are listed in the
+        # cmd string) and tell the Editor to hideByNames
         sl = pm.selected()
-        if len(sl) == 0:
-            m2u.core.getEditor().hideSelected()
-            return
         for obj in sl:
             visible = pm.getAttr((obj+".visibility"))
             if visible:
+                # hide unselected was called
                 m2u.core.getEditor().isolateSelected()
                 return
-        # no visible objects in the selection list
-        m2u.core.getEditor().hideSelected()
+        # selection is empty or contains only invisible objects
+        # that means hide selected was called and we have a list to parse
+        # the list looks something like this:
+        # {"pCube1","pCube2","pCube3","pCube4","pCube5","pCube6","pCube7"};
+        listEnd = cmd.find("}")
+        cnt = cmd[listStart+2:listEnd-1]
+        names = cnt.split('","')
+        m2u.core.getEditor().hideByNames(names)
         
     # if no list is provided, it should hide the selected only
     # but this is never executed this way in maya

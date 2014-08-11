@@ -34,6 +34,7 @@ def makeSurePathExists(path):
                 raise
 
 
+# TODO: move to editor-specific pipeline file
 def getFBXSettingsFile():
     """ return the fbx-settings file path for the current used editor
     """

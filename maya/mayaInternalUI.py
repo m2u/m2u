@@ -36,6 +36,12 @@ def cbSyncVisibility(*args):
 def cbSyncVisibilityOff(*args):
     m2u.core.getProgram().setVisibilitySyncing(False)
 
+def cbSyncLayers(*args):
+    m2u.core.getProgram().setLayerSyncing(True)
+
+def cbSyncLayersOff(*args):
+    m2u.core.getProgram().setLayerSyncing(False)
+
 def cbFetchSelected(*args):
     # this is circumventing the interface
     #m2u.maya.mayaCommand.fetchSelectedObjectsFromEditor()
@@ -53,6 +59,7 @@ def createUI():
     global m2uwin
     if m2uwin is not None:
         pm.deleteUI(m2uwin, window=True)
+        m2uwin = None
     
     v = m2u.getVersion()
     m2uwin = pm.window( title="m2u "+v+" (maya)", iconName='m2u',
@@ -68,6 +75,8 @@ def createUI():
                  ofc = cbSyncObjectsOff, v = False)
     pm.checkBox( label='Sync Visibility', onc = cbSyncVisibility,
                  ofc = cbSyncVisibilityOff, v = False)
+    pm.checkBox( label='Sync Layers', onc = cbSyncLayers,
+                 ofc = cbSyncLayersOff, v = False)
     pm.separator()
     pm.button( label='Fetch Selected', c = cbFetchSelected)
     pm.button( label='Send Selected To Editor', c = cbSendSelectedToEd)

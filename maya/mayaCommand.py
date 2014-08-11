@@ -56,7 +56,7 @@ def importFile(path):
     wasSyncing = prog.isObjectSyncing()
     prog.setObjectSyncing(False)
     
-    cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
+    cmd = "FBXImport -f \""+ path.replace("\\","/") +"\""
     pm.mel.eval(cmd)
     
     prog.setObjectSyncing(wasSyncing) # restore syncing state
@@ -116,6 +116,10 @@ def exportObjectAsAsset(name, path):
     exportObjectCentered(name, fullpath, center=True)
 
 
+identity = [1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0]
 # TODO: move to maya-specific pipeline-file
 def exportObjectCentered(name, path, center=True):
     """ export object `name` to FBX file specified by `path`
@@ -130,9 +134,10 @@ def exportObjectCentered(name, path, center=True):
     prog.setObjectSyncing(False) # so our move command won't be reflected in Ed
     
     pm.select(name, r=True)
-    mat = pm.xform(query=True, ws=True, m=True) # backup matrix
     if center:
-        pm.xform( name, a=True, ws=True, t=(0,0,0), ro=(0,0,0), s=(1,1,1))
+        mat = pm.xform(query=True, ws=True, m=True) # backup matrix
+        pm.xform( name, a=True, ws=True, m = identity)
+        #pm.makeIdentity(name)
     
     exportSelectedToFBX(path)
     
@@ -148,12 +153,12 @@ def exportSelectedToFBX(path):
 
     fbx settings will be set from preset file
     """
-    # TODO: fbxExportPreset should be Editor-specific
     if os.path.exists(path):
         os.remove(path) 
+    # TODO: fbxExportPreset should be Editor-specific
     sfpath = m2u.core.getPipeline().getFBXSettingsFile()
     _lg.debug("settings file path is: "+sfpath)
-    lsfcmd = "FBXLoadExportPresetFile -f \"%s\";" % sfpath
+    lsfcmd = "FBXLoadExportPresetFile -f \"%s\";" % sfpath.replace("\\","/")
     pm.mel.eval(lsfcmd)
     _lg.debug("Exporting File: "+path)
     # maya's FBX command is not able to create directories, so we let python do that
@@ -181,6 +186,9 @@ def sendSelectedToEdOverwrite():
 
     : we might do a file-date check bevor overwrite?
     does that make sense?
+
+    we should replace all geometry in maya of objects with the same
+    asset path with the geometry of the new object after the export
     
     """
     pass
@@ -217,7 +225,7 @@ def sendSelectedToEdAsNew():
     """
     # the most simple approach for now is to empty the "AssetPath" attribute
     # on all the selected objects and call sendSelectedToEd. The automation
-    # will then do what we want.
+    # will then do what we want. (as soon as it checks for existing files)
     # TODO: integrate that functionality in the sendSelecteToEd function, because
     # that will loop over all selected objects anyway.
     selectedObjects = pm.selected(type="transform")

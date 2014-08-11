@@ -41,12 +41,14 @@ def unhideAll():
 def hideByNames(namesList):
     """hide all objects in the namesList
     """
+    msg = "HideByNames"
     for name in namesList:
-        msg = "HideByName "+name
-        ue4Conn.sendMessage(msg)
+        msg =  msg +" "+ name
+    ue4Conn.sendMessage(msg)
 
 
 def unhideByNames(namesList):
+    # not implemented!
     """show all objects in the namesList
     """
     for name in namesList:
