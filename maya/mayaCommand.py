@@ -56,7 +56,7 @@ def importFile(path):
     wasSyncing = prog.isObjectSyncing()
     prog.setObjectSyncing(False)
     
-    cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
+    cmd = "FBXImport -f \""+ path.replace("\\","/") +"\""
     pm.mel.eval(cmd)
     
     prog.setObjectSyncing(wasSyncing) # restore syncing state
@@ -153,9 +153,9 @@ def exportSelectedToFBX(path):
 
     fbx settings will be set from preset file
     """
-    # TODO: fbxExportPreset should be Editor-specific
     if os.path.exists(path):
         os.remove(path) 
+    # TODO: fbxExportPreset should be Editor-specific
     sfpath = m2u.core.getPipeline().getFBXSettingsFile()
     _lg.debug("settings file path is: "+sfpath)
     lsfcmd = "FBXLoadExportPresetFile -f \"%s\";" % sfpath.replace("\\","/")

@@ -30,6 +30,6 @@ def getProjectExportDir():
     folder. Used when exporting and importing mesh-files.
 
     """
-    # TODO: this is a pipeline task and should be moved to a new file
-    # for common pipeline functionality
-    return getTempFolder()+"/m2u_Export"
+    p = settings.getAndSetValueDefaultIfError("General","ProjectExportDir",
+                                              getTempFolder()+"/m2u_Export", False)
+    return p

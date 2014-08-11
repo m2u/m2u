@@ -13,7 +13,7 @@ def connectToUEd(*args):
         print "no TCP-endpoint specified, using localhost:3939"
         _openConnection()
     else:
-        _openConnection(args)
+        _openConnection(args[0],args[1])
 
 def _openConnection(TCP_IP = '127.0.0.1', TCP_PORT=3939):
     BUFFER_SIZE = 1024
