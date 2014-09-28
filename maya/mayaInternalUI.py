@@ -47,9 +47,11 @@ def cbFetchSelected(*args):
     #m2u.maya.mayaCommand.fetchSelectedObjectsFromEditor()
     m2u.core.getEditor().ue4Export.fetchSelectedObjects()
 
-
 def cbSendSelectedToEd(*args):
     m2u.core.getProgram().mayaCommand.sendSelectedToEd()
+
+def cbSendSelectedToEdExportOnly(*args):
+    m2u.core.getProgram().mayaCommand.sendSelectedToEdExportOnly()
     
 def cbUDKImportContent(*args):
     m2u.udk.udkUI.callImportContent("C:\\temp\\mp7_compact_export.fbx",None)
@@ -80,6 +82,7 @@ def createUI():
     pm.separator()
     pm.button( label='Fetch Selected', c = cbFetchSelected)
     pm.button( label='Send Selected To Editor', c = cbSendSelectedToEd)
+    pm.button( label='Export Selected To Editor', c = cbSendSelectedToEdExportOnly)
     #pm.button( label='Import Content Test', c = cbUDKImportContent)
     pm.setParent( '..' )
     pm.showWindow( m2uwin )

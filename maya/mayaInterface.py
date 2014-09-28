@@ -20,12 +20,10 @@ A Program Interface provides the following functionality:
 
 # note: import m2u.maya.mayaCommand as _cmd
 # will give attribute error on m2u module. strange system
-from m2u.maya import mayaCommand
 from m2u.maya import mayaCommand as _cmd
 from m2u.maya import mayaCamera as _cam
 from m2u.maya import mayaObjectTracker as _obj
 from m2u.maya import mayaVisibilityTracker as _vis
-from m2u.maya import mayaSceneTracker as _sc
 from m2u.maya import mayaLayerTracker as _la
 
 # -- General --
