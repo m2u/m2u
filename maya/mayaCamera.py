@@ -30,7 +30,7 @@ def setupCamera():
     with the bigger size of udk scenes.
     """
     cam = pm.nodetypes.Camera('perspShape',query=True)
-    cam.setFarClipPlane(6553600.0)
+    cam.setFarClipPlane(65536.0)
     cam.setNearClipPlane(10.0)
     setCameraFOV(90.0)
     cam = pm.nodetypes.Camera('topShape',query=True)
