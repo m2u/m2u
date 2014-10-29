@@ -55,17 +55,17 @@ def importFile(path):
     # a lot of renaming and we don't want that to produce warnings
     wasSyncing = prog.isObjectSyncing()
     prog.setObjectSyncing(False)
-    
+
     cmd = "FBXImport -f \""+ path.replace("\\","/") +"\""
     pm.mel.eval(cmd)
-    
+
     prog.setObjectSyncing(wasSyncing) # restore syncing state
 
 
 #def importAsset()
 #def referenceAsset ??
 
-    
+
 # TODO: remove this function or move to UDK specific file
 # it is UDK specific, ue4 uses another function.
 # fetching is an editor-task, where the editor tells the program
@@ -87,15 +87,15 @@ def fetchSelectedObjectsFromEditor():
     if not status:
         _lg.error("Unable to import file: "+path)
         return
-    
+
     # disable object tracking, because importing FBX files will cause
     # a lot of renaming and we don't want that to produce warnings
     wasSyncing = prog.isObjectSyncing()
     prog.setObjectSyncing(False)
-    
+
     cmd = "FBXImport -f \""+ path.replace("\\","\\\\") +"\""
     pm.mel.eval(cmd)
-    
+
     prog.setObjectSyncing(wasSyncing) # restore syncing state
 
 
@@ -132,20 +132,22 @@ def exportObjectCentered(name, path, center=True):
     prog = m2u.core.getProgram()
     wasSyncing = prog.isObjectSyncing()
     prog.setObjectSyncing(False) # so our move command won't be reflected in Ed
-    
+
     pm.select(name, r=True)
     if center:
         mat = pm.xform(query=True, ws=True, m=True) # backup matrix
-        pm.xform( name, a=True, ws=True, m = identity)
+        piv = pm.xform (name, piv=True, q=True, ws=True) # backup pivot
+        pm.xform(name, a=True, ws=True, m = identity)
         #pm.makeIdentity(name)
-    
+
     exportSelectedToFBX(path)
-    
+
     if center:
-        pm.xform( name, a=True, ws=True, m=mat) # reset matrix
-    
+        pm.xform(name, a=True, ws=True, m=mat) # reset matrix
+        pm.xform(name, ws=True, piv=(piv[0], piv[1], piv[2])) # reset pivot
+
     prog.setObjectSyncing(wasSyncing) # restore syncing state
-        
+
 
 # TODO: move to maya-specific pipeline-file
 def exportSelectedToFBX(path):
@@ -154,7 +156,7 @@ def exportSelectedToFBX(path):
     fbx settings will be set from preset file
     """
     if os.path.exists(path):
-        os.remove(path) 
+        os.remove(path)
     # TODO: fbxExportPreset should be Editor-specific
     sfpath = m2u.core.getPipeline().getFBXSettingsFile()
     _lg.debug("settings file path is: "+sfpath)
@@ -229,12 +231,12 @@ def sendSelectedToEdAsNew():
     # TODO: integrate that functionality in the sendSelecteToEd function, because
     # that will loop over all selected objects anyway.
     selectedObjects = pm.selected(type="transform")
-    
+
     pass
 
 
 
-def sendSelectedToEd():
+def sendSelectedToEdExportOnly():
     """
     there is the special case where there is one type of mesh in the scene
     with edited geometry but an AssetPath pointing to the unedited file
@@ -301,17 +303,8 @@ def sendSelectedToEd():
     the vert count, again the heavier the check will be...
     """
 
-    #1. get selected objects (only transform nodes)
-    selectedObjects = pm.selected(type="transform")
-    # filter out transforms that don't have a mesh-shape node
-    selectedMeshes = list()
-    for obj in selectedObjects:
-        meshShapes = pm.listRelatives(obj, shapes=True, type="mesh")
-        if len(meshShapes)>0:
-            selectedMeshes.append(obj)
-    _lg.debug("found %i selected meshes" % len(selectedMeshes))
-    # TODO: maybe filter other transferable stuff like lights or so
-    
+    selectedMeshes = getSelectedMeshes()
+
     #2. for each object get the "AssetPath" attribute
     untaggedList = list()
     taggedDict = {}
@@ -329,7 +322,7 @@ def sendSelectedToEd():
             untaggedList.append(obj)
     _lg.debug("found %i untagged" % len(untaggedList))
     _lg.debug("found %i tagged" % len(taggedDict))
-    
+
     #3. do the geometry check for tagged objects
     #   this assembles the taggedUniqueDict
     taggedDiscrepancyDetected = False
@@ -350,7 +343,7 @@ def sendSelectedToEd():
                     taggedDiscrepancyDetected = True
             lis.remove(obj) # we are done with this object too
     _lg.debug("found %i tagged uniques" % len(taggedUniqueDict))
-    
+
     #3. do the geometry check for untagged objects
     untaggedUniquesDetected = False
     while len(untaggedList)>0:
@@ -371,7 +364,7 @@ def sendSelectedToEd():
                 foundUniqueForMe = True
                 _lg.debug("found a unique key (%s) for %s" %(other.name(), obj.name()))
                 break
-        
+
         if not foundUniqueForMe:
             untaggedUniquesDetected = True
             # make this a new unique, simply take the objects name as AssetPath
@@ -383,7 +376,7 @@ def sendSelectedToEd():
             # we will automatically compare to all other untagged to find
             # members for our new unique in the next loop iteration
     _lg.debug("found %i uniques (with untagged)" % len(taggedUniqueDict))
-    
+
     # TODO: 4. UI-stuff...
     #4. if taggedDiscrepancy or untaggedUniques were detected,
     # list all uniques in the UI and let the user change names
@@ -392,38 +385,51 @@ def sendSelectedToEd():
         #for unique in taggedUniqueDict.keys():
             # it is up to the UI to do that and let the user
             # set a new assetPath on any of those unique guy's lists
-    
+
     #5. export files stuff
     for obj in taggedUniqueDict.keys():
         exportObjectAsAsset(obj.name(), obj.attr("AssetPath").get())
-        
+
     #6. tell the editor to import all the uniques
     fileList = []
     for obj in taggedUniqueDict.keys():
         fileList.append(obj.attr("AssetPath").get())
     m2u.core.getEditor().importAssetsBatch(fileList)
-        
-    #7. tell the editor to assemble the scene
+
+
+def sendSelectedToEd():
+    assembleScene(getSelectedMeshes())
+
+
+def getSelectedMeshes():
+    # 1. get selected objects (only transform nodes)
+    selectedObjects = pm.selected(type="transform")
+
+    # filter out transforms that don't have a mesh-shape node
+    selectedMeshes = list()
+
+    for obj in selectedObjects:
+        meshShapes = pm.listRelatives(obj, shapes=True, type="mesh")
+        if len(meshShapes) > 0:
+            selectedMeshes.append(obj)
+
+    _lg.debug("found %i selected meshes" % len(selectedMeshes))
+    # TODO: maybe filter other transferable stuff like lights or so
+    return selectedMeshes
+
+
+def assembleScene(selectedMeshes):
     objInfoList = []
+
     for obj in selectedMeshes:
-        # TODO: make that a new function
-        objInfo = ObjectInfo(name = obj.shortName(), typeInternal = "mesh",
-                             typeCommon = "mesh")
         objTransforms = m2u.maya.mayaObjectTracker.getTransformationFromObj(obj)
+        objInfo = ObjectInfo(name=obj.shortName(), typeInternal="mesh",
+                             typeCommon="mesh")
         objInfo.pos = objTransforms[0]
         objInfo.rot = objTransforms[1]
         objInfo.scale = objTransforms[2]
         objInfo.AssetPath = obj.attr("AssetPath").get()
         objInfoList.append(objInfo)
+
     m2u.core.getEditor().addActorBatch(objInfoList)
-    #TODO: add support for lights and so on
-
-
-
-
-
-
-
-
-
-
+    # TODO: add support for lights and so on
