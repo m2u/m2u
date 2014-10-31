@@ -1,0 +1,10 @@
+<RCC>
+  <qresource prefix="btn">
+    <file>icoSettings.png</file>
+    <file>icoTest</file>
+  </qresource>
+  <qresource prefix="icons">
+    <file>m2uIcon32.png</file>
+    <file>m2uIcon128.png</file>
+  </qresource>
+</RCC>
