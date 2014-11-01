@@ -20,7 +20,7 @@ m2u-window to the Programs main window if also Qt based.
 import m2u
 program = m2u.core.getProgram()
 
-from m2uMainWindow import m2uMainWindow
+from .m2uMainWindow import m2uMainWindow
 
 uiFolder = m2u.core.getM2uBasePath() + "/ui/"
 

@@ -27,7 +27,7 @@ class m2uMainWindow(QtGui.QWidget):
         self.show()
     
     def buildUI(self):
-        
+        """create the widgets and layouts"""
         # connect row
         self.topRowLayout = QtGui.QHBoxLayout()
         self.connectBtn = QtGui.QPushButton(text = "Connect")
@@ -86,9 +86,18 @@ class m2uMainWindow(QtGui.QWidget):
         
         
     def connectUI(self):
+        """connect slots to callbacks"""
         self.connectBtn.clicked.connect( self.connectBtnClicked )
+        self.settingsBtn.clicked.connect( self.settingsBtnClicked )
         
-        #self.syncCameraChkbx.toggled.connect( self.syncCameraChkbxClicked )
+        self.syncCameraChkbx.toggled.connect( self.syncCameraChkbxClicked )
+        self.syncObjectsChkbx.toggled.connect( self.syncObjectsChkbxClicked )
+        self.syncSelectionChkbx.toggled.connect( self.syncSelectionChkbxClicked )
+        self.syncVisibilityChkbx.toggled.connect( self.syncVisibilityChkbxClicked )
+        self.syncLayersChkbx.toggled.connect( self.syncLayersChkbxClicked )
+        
+        self.sendSelBtn.clicked.connect( self.sendSelBtnClicked )
+        self.sendSelNewBtn.clicked.connect( self.sendSelNewBtnClicked )
     
     
     ################################
@@ -96,8 +105,36 @@ class m2uMainWindow(QtGui.QWidget):
     ################################
     
     def connectBtnClicked(self):
-        print "clicked a buttn"
-        
+        #get the address from the edit line and pass it to the connect
+        #function. We don't care if the address is valid here.
+        addr = self.addressEdit.text()
+        editor.connectToInstance(addr)
+    
+    def settingsBtnClicked(self):
+        pass
+    
+    # ---
     
     def syncCameraChkbxClicked(self, checked):
+        program.setCameraSyncing(checked)
+    
+    def syncObjectsChkbxClicked(self, checked):
+        program.setObjectSyncing(checked)
+    
+    def syncSelectionChkbxClicked(self, checked):
         pass
+    
+    def syncVisibilityChkbxClicked(self, checked):
+        program.setVisibilitySyncing(checked)
+    
+    def syncLayersChkbxClicked(self, checked):
+        program.setLayerSyncing(checked)
+
+    # ---
+
+    def sendSelBtnClicked(self):
+        program.sendSelectedToEd()
+
+    def sendSelNewBtnClicked(self):
+        pass
+

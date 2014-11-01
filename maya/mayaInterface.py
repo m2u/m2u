@@ -52,3 +52,6 @@ isLayerSyncing = _la.isLayerSyncing
 
 # TODO: move to pipeline file or so
 importFile = _cmd.importFile
+
+
+sendSelectedToEd = _cmd.sendSelectedToEd

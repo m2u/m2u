@@ -236,7 +236,7 @@ def sendSelectedToEdAsNew():
 
 
 
-def sendSelectedToEdExportOnly():
+def sendSelectedToEdExportOnly(selectedMeshes):
     """
     there is the special case where there is one type of mesh in the scene
     with edited geometry but an AssetPath pointing to the unedited file
@@ -303,7 +303,7 @@ def sendSelectedToEdExportOnly():
     the vert count, again the heavier the check will be...
     """
     
-    selectedMeshes = getSelectedMeshes()
+    #selectedMeshes = getSelectedMeshes()
     
     #2. for each object get the "AssetPath" attribute
     untaggedList = list()
@@ -398,7 +398,9 @@ def sendSelectedToEdExportOnly():
 
 
 def sendSelectedToEd():
-    assembleScene(getSelectedMeshes())
+    selectedMeshes = getSelectedMeshes()
+    sendSelectedToEdExportOnly(selectedMeshes)
+    assembleScene(selectedMeshes)
 
 
 def getSelectedMeshes():
