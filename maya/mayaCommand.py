@@ -236,7 +236,7 @@ def sendSelectedToEdAsNew():
 
 
 
-def sendSelectedToEdExportOnly():
+def sendSelectedToEdExportOnly(selectedMeshes):
     """
     there is the special case where there is one type of mesh in the scene
     with edited geometry but an AssetPath pointing to the unedited file
@@ -302,9 +302,9 @@ def sendSelectedToEdExportOnly():
     only counting objects... vertex count may be different in scenes, and the heavier
     the vert count, again the heavier the check will be...
     """
-
-    selectedMeshes = getSelectedMeshes()
-
+    
+    #selectedMeshes = getSelectedMeshes()
+    
     #2. for each object get the "AssetPath" attribute
     untaggedList = list()
     taggedDict = {}
@@ -322,7 +322,7 @@ def sendSelectedToEdExportOnly():
             untaggedList.append(obj)
     _lg.debug("found %i untagged" % len(untaggedList))
     _lg.debug("found %i tagged" % len(taggedDict))
-
+    
     #3. do the geometry check for tagged objects
     #   this assembles the taggedUniqueDict
     taggedDiscrepancyDetected = False
@@ -343,7 +343,7 @@ def sendSelectedToEdExportOnly():
                     taggedDiscrepancyDetected = True
             lis.remove(obj) # we are done with this object too
     _lg.debug("found %i tagged uniques" % len(taggedUniqueDict))
-
+    
     #3. do the geometry check for untagged objects
     untaggedUniquesDetected = False
     while len(untaggedList)>0:
@@ -364,7 +364,7 @@ def sendSelectedToEdExportOnly():
                 foundUniqueForMe = True
                 _lg.debug("found a unique key (%s) for %s" %(other.name(), obj.name()))
                 break
-
+                
         if not foundUniqueForMe:
             untaggedUniquesDetected = True
             # make this a new unique, simply take the objects name as AssetPath
@@ -376,7 +376,7 @@ def sendSelectedToEdExportOnly():
             # we will automatically compare to all other untagged to find
             # members for our new unique in the next loop iteration
     _lg.debug("found %i uniques (with untagged)" % len(taggedUniqueDict))
-
+    
     # TODO: 4. UI-stuff...
     #4. if taggedDiscrepancy or untaggedUniques were detected,
     # list all uniques in the UI and let the user change names
@@ -385,11 +385,11 @@ def sendSelectedToEdExportOnly():
         #for unique in taggedUniqueDict.keys():
             # it is up to the UI to do that and let the user
             # set a new assetPath on any of those unique guy's lists
-
+    
     #5. export files stuff
     for obj in taggedUniqueDict.keys():
         exportObjectAsAsset(obj.name(), obj.attr("AssetPath").get())
-
+        
     #6. tell the editor to import all the uniques
     fileList = []
     for obj in taggedUniqueDict.keys():
@@ -398,7 +398,9 @@ def sendSelectedToEdExportOnly():
 
 
 def sendSelectedToEd():
-    assembleScene(getSelectedMeshes())
+    selectedMeshes = getSelectedMeshes()
+    sendSelectedToEdExportOnly(selectedMeshes)
+    assembleScene(selectedMeshes)
 
 
 def getSelectedMeshes():

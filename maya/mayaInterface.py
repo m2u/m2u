@@ -26,6 +26,8 @@ from m2u.maya import mayaObjectTracker as _obj
 from m2u.maya import mayaVisibilityTracker as _vis
 from m2u.maya import mayaLayerTracker as _la
 
+from m2u.maya import mayaUI as ui
+
 # -- General --
 def getName():
     return "maya"
@@ -50,3 +52,6 @@ isLayerSyncing = _la.isLayerSyncing
 
 # TODO: move to pipeline file or so
 importFile = _cmd.importFile
+
+
+sendSelectedToEd = _cmd.sendSelectedToEd

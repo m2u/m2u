@@ -38,13 +38,21 @@ def getPipeline():
     """get the pipeline module"""
     return _pipeline
 
-def initialize(programName,editorName="udk"):
+def initialize(programName,editorName):
     """Initializes the whole m2u system.
     
-    :param programName: the program to use 'max' or 'maya'
-    :param editorName: the target engine to use
+    :param programName: the program to use ('max' or 'maya' etc.)
+    :param editorName: the target engine to use ('ue4', 'unity' etc.)
     
     """
+    if len(programName) == 0:
+        _lg.error("No program module specified for initialization. "
+                  "Make sure to pass the program name to your initialize call.")
+        return
+    if len(editorName) == 0:
+        _lg.error("No editor module specified for initialization. "
+                  "Make sure to pass the editor name to your initialize call.")
+        return
     _initProgram(programName)
     _initEditor(editorName)
     _initPipeline()
