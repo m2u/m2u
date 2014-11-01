@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>res/icoSettings.png</file>
+    <file>res/m2uIcon128.png</file>
+    <file>res/m2uIcon32.png</file>
+    <file>res/icoTest</file>
+  </qresource>
+  <qresource prefix="forms">
+    <file>m2uWindow.ui</file>
+    <file>m2uExportWindow.ui</file>
+  </qresource>
+</RCC>

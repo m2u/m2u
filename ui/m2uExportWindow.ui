@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Export</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>res/m2uIcon32.png</normaloff>res/m2uIcon32.png</iconset>
+  </property>
   <widget class="QListView" name="listView">
    <property name="geometry">
     <rect>
