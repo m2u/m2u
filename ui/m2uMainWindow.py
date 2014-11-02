@@ -9,9 +9,10 @@ editor = m2u.core.getEditor()
 # we can assume that PySide exists, when this file is loaded
 from PySide import QtCore
 from PySide import QtGui
-from PySide.QtUiTools import QUiLoader
+#from PySide.QtUiTools import QUiLoader
 
 from . import m2uIcons as icons
+from .m2uExportWindow import m2uExportWindow
 
 
 class m2uMainWindow(QtGui.QWidget):
@@ -24,6 +25,8 @@ class m2uMainWindow(QtGui.QWidget):
         self.setWindowIcon(icons.m2uIcon32)
         self.buildUI()
         self.connectUI()
+
+        self.exportWindow = m2uExportWindow(parent = self)
         self.show()
     
     def buildUI(self):
@@ -136,5 +139,5 @@ class m2uMainWindow(QtGui.QWidget):
         program.sendSelectedToEd()
 
     def sendSelNewBtnClicked(self):
-        pass
+        self.exportWindow.show()
 
