@@ -85,6 +85,7 @@ class m2uMainWindow(QtGui.QWidget):
         formLayout.addWidget(self.sendGrp)
         #formLayout.setSpacing(1)
         formLayout.setContentsMargins(1,1,1,1)
+        formLayout.addStretch()
         self.setLayout(formLayout)
         
         

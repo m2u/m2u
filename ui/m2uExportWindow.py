@@ -11,11 +11,12 @@ from PySide import QtGui
 
 from . import m2uIcons as icons
 
-class m2uExportWindow(QtGui.QWidget):
+class m2uExportWindow(QtGui.QDialog):
     def __init__(self, *args, **kwargs):
         super(m2uExportWindow, self).__init__(*args, **kwargs)
         
-        self.setWindowFlags(QtCore.Qt.Popup)
+        self.setWindowFlags(QtCore.Qt.Dialog)
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.setWindowTitle("Export")
         self.setWindowIcon(icons.m2uIcon32)
         self.buildUI()
@@ -30,11 +31,12 @@ class m2uExportWindow(QtGui.QWidget):
         # - asset tree
         self.assetTree = QtGui.QTreeWidget()
         self.assetTree.setColumnCount(2)
-        self.assetTree.setHeaderLabels(["Assets / Instances","Subpath"])
+        self.assetTree.setHeaderLabels(["Assets/Instances","Subpath"])
         leftLayout.addWidget(self.assetTree)
         # - left buttons
         layout = QtGui.QGridLayout()
         self.selectInstancesBtn = QtGui.QPushButton("Select Instances")
+        self.selectInstancesBtn.setDisabled(True)
         layout.addWidget(self.selectInstancesBtn,0,0)
         self.removeBtn = QtGui.QPushButton("Remove")
         layout.addWidget(self.removeBtn,1,0)
@@ -60,22 +62,22 @@ class m2uExportWindow(QtGui.QWidget):
         subpathLayout.addWidget(self.subpathEdit,1,0)
         self.subpathBrowseBtn = QtGui.QToolButton()
         subpathLayout.addWidget(self.subpathBrowseBtn,1,1)
-        self.subpathAssignBtn = QtGui.QPushButton("Assign")
+        self.subpathAssignBtn = QtGui.QPushButton("Set")
         subpathLayout.addWidget(self.subpathAssignBtn,1,2)
         grpLayout.addItem(subpathLayout)
         # - - prefix and suffix
         prefixLayout = QtGui.QGridLayout()
-        label = QtGui.QLabel("Assign Prefix")
+        label = QtGui.QLabel("Set Prefix")
         prefixLayout.addWidget(label,0,0)
         self.prefixEdit = QtGui.QLineEdit()
         prefixLayout.addWidget(self.prefixEdit,0,1)
-        self.prefixAssignBtn = QtGui.QPushButton("Assign")
+        self.prefixAssignBtn = QtGui.QPushButton("Set")
         prefixLayout.addWidget(self.prefixAssignBtn,0,2)
-        label = QtGui.QLabel("Assign Suffix")
+        label = QtGui.QLabel("Set Suffix")
         prefixLayout.addWidget(label,1,0)
         self.suffixEdit = QtGui.QLineEdit()
         prefixLayout.addWidget(self.suffixEdit,1,1)
-        self.suffixAssignBtn = QtGui.QPushButton("Assign")
+        self.suffixAssignBtn = QtGui.QPushButton("Set")
         prefixLayout.addWidget(self.suffixAssignBtn,1,2)
         grpLayout.addItem(prefixLayout)
         
@@ -85,7 +87,7 @@ class m2uExportWindow(QtGui.QWidget):
         # - right buttons
         layout = QtGui.QGridLayout()
         layout.setColumnStretch(0,1)
-        self.assignAssetDataBtn = QtGui.QPushButton("Assing Asset Data (No Export)")
+        self.assignAssetDataBtn = QtGui.QPushButton("Assign Asset Data (No Export)")
         layout.addWidget(self.assignAssetDataBtn,0,1,1,2)
         self.exportSelectedBtn = QtGui.QPushButton("Export Selected")
         layout.addWidget(self.exportSelectedBtn,1,1,1,2)
@@ -111,7 +113,7 @@ class m2uExportWindow(QtGui.QWidget):
 
     def connectUI(self):
         """connect slots to callbacks"""
-        pass
+        self.cancelBtn.clicked.connect(self.reject)
 
     ################################
     # Callbacks

@@ -39,3 +39,19 @@ def createUI():
         mayaMainWindowPtr = omui.MQtUtil.mainWindow() 
         mayaMainWindow= wrapInstance(long(mayaMainWindowPtr), QtGui.QWidget) 
         ui.createUI(mayaMainWindow)
+
+
+def addSpecificToCommonUI(mainWindow):
+    """ will be called from within the common PySide UI. Add any program-specific
+    PySide based UI parts to the main window's layout from here.
+
+    This function must be implemented in the program-ui-module. If you don't have
+    any specific parts to add, leave the body empty.
+    
+    """
+    from .mayaPSUICameraWidget import mayaPSUICameraWidget
+    cameraWidget = mayaPSUICameraWidget()
+    layout = mainWindow.layout()
+    # insert after the connect-line
+    layout.insertWidget(1,cameraWidget)
+

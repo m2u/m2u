@@ -1,11 +1,11 @@
 """
-this is the simple fallback-ui for maya for the case that no pyQt is installed.
+this is the simple fallback-ui for maya for the case that no PySide is installed.
 It should provide the common functionality but I won't invest much time into
 layout.
 
 This UI is mainly used for testing and may do stuff that Editor-specific UI parts
 would do in a regular (PyQt or PySide based) UI.
-This UI contains UE4 specific code!
+This UI may contain UE4 specific code!
 
 """
 

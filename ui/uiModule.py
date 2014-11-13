@@ -25,6 +25,9 @@ from .m2uMainWindow import m2uMainWindow
 uiFolder = m2u.core.getM2uBasePath() + "/ui/"
 
 def createUI(parentQtWindow = None):
-    m2uMainWindow(parent = parentQtWindow)
+    mainWindow = m2uMainWindow(parent = parentQtWindow)
+    # now let the program and editor add their specific ui parts
+    program.ui.addSpecificToCommonUI(mainWindow)
+    
 
 

@@ -26,7 +26,8 @@ from m2u.maya import mayaObjectTracker as _obj
 from m2u.maya import mayaVisibilityTracker as _vis
 from m2u.maya import mayaLayerTracker as _la
 
-from m2u.maya import mayaUI as ui
+# the maya ui module, has to be named "ui" within here!
+from m2u.maya import ui
 
 # -- General --
 def getName():
