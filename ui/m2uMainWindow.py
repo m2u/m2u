@@ -27,7 +27,7 @@ class m2uMainWindow(QtGui.QWidget):
         self.connectUI()
 
         self.exportWindow = m2uExportWindow(parent = self)
-        self.show()
+        #self.show()
     
     def buildUI(self):
         """create the widgets and layouts"""

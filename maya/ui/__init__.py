@@ -1,5 +1,5 @@
 """
-the programs main UI module
+the program's main UI module
 will try to initialize creation of the common PySide based UI if possible.
 
 If PySide can not be loaded create a fallback-UI.

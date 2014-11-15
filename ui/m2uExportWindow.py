@@ -1,7 +1,28 @@
 """
 the asset-export UI
 
+This window will receive data from the export process,
+that data can then be edited (change names and paths of assets)
+and finally send the edited data back to the export process which will then
+continue with the actual export.
+
 """
+
+# TODO: i would love to have this dialogue to not be required to be modal
+# in the current implementation, the export process is blocked until this dialogue
+# returns, which makes it impossible for the user to interact with the viewports
+# or so to get response as to which objects in the scene are which in the export 
+# window. The export process can only continue if necessary data was returned from
+# the dialogue.
+# alternatives would be to make the dialogue not modal and implement a while-loop
+# with integrated event-loop-processing to make the application not hang while
+# waiting for the dialogue to return. The problematic point here is the question of
+# where to put the event-loop-processing. This may differ depending on if the
+# user Program has native PySide support or not, if the m2u-UI is running in a 
+# detached thread or not.
+# The other option would be to split the export-process into parts which will
+# then be called appropriately from within this UI. ... have to think about that
+
 import m2u
 program = m2u.core.getProgram()
 editor = m2u.core.getEditor()
@@ -99,8 +120,7 @@ class m2uExportWindow(QtGui.QDialog):
         rightLayout.addStretch()
         rightLayout.addItem(layout)
         rightWidget.setLayout(rightLayout)
-        
-        
+           
         # add all onto the form (splitted)
         splitter = QtGui.QSplitter()
         splitter.addWidget(leftWidget)
@@ -113,9 +133,78 @@ class m2uExportWindow(QtGui.QDialog):
 
     def connectUI(self):
         """connect slots to callbacks"""
-        self.cancelBtn.clicked.connect(self.reject)
+        self.cancelBtn.clicked.connect( self.reject )
+        self.exportAllBtn.clicked.connect( self.exportAllBtnClicked )
+        self.assignAssetDataBtn.clicked.connect( self.assignAssetDataBtnClicked )
+        self.exportSelectedBtn.clicked.connect( self.exportSelectedBtnClicked )
+
+        self.subpathAssignBtn.clicked.connect( self.subpathAssignBtnClicked )
+        self.prefixAssignBtn.clicked.connect( self.prefixAssignBtnClicked )
+        self.suffixAssignBtn.clicked.connect( self.suffixAssignBtnClicked )
+
+        self.selectInstancesBtn.clicked.connect( self.selectInstancesBtnClicked )
+        self.removeBtn.clicked.connect( self.removeBtnClicked )
+        self.makeNewBtn.clicked.connect( self.makeNewBtnClicked )
 
     ################################
-    # Callbacks
+    # Actions and Callbacks
     ################################
+
+    def setData(self, data):
+        """ set the temporary data for editing
+
+        call before showing the dialogue
+
+        """
+        pass
+
+    def getResult(self):
+        """ get the result of the dialog
+
+        0 = cancelled
+        1 = export
+        2 = assign-only
+        call after the dialog has returned
+
+        """
+
+    def getData(self):
+        """ get the - possibly edited - data
+
+        you will only receive valid data if the dialog was not cancelled
         
+        """
+        pass
+
+    # ---
+    
+    def exportAllBtnClicked(self):
+        self.accept()
+
+    def exportSelectedBtnClicked(self):
+        self.accept()
+
+    def assignAssetDataBtnClicked(self):
+        self.accept()
+
+    # ---
+
+    def subpathAssignBtnClicked(self):
+        pass
+
+    def prefixAssignBtnClicked(self):
+        pass
+
+    def suffixAssignBtnClicked(self):
+        pass
+
+    # ---
+
+    def selectInstancesBtnClicked(self):
+        pass
+
+    def removeBtnClicked(self):
+        pass
+
+    def makeNewBtnClicked(self):
+        pass

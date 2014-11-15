@@ -18,16 +18,28 @@ m2u-window to the Programs main window if also Qt based.
 
 """
 import m2u
+
+from m2u import logger as _logger
+_lg = _logger.getLogger(__name__)
+
 program = m2u.core.getProgram()
+editor = m2u.core.getEditor()
 
 from .m2uMainWindow import m2uMainWindow
 
 uiFolder = m2u.core.getM2uBasePath() + "/ui/"
 
+mainWindow = None
+
 def createUI(parentQtWindow = None):
-    mainWindow = m2uMainWindow(parent = parentQtWindow)
-    # now let the program and editor add their specific ui parts
-    program.ui.addSpecificToCommonUI(mainWindow)
+    global mainWindow
+    if mainWindow is None:
+        _lg.info("No m2u window found, creating a new one.")
+        mainWindow = m2uMainWindow(parent = parentQtWindow)
+        # now let the program and editor add their specific ui parts
+        program.ui.addSpecificToCommonUI(mainWindow)
+        editor.ui.addSpecificToCommonUI(mainWindow)
+    mainWindow.show()
     
 
 
