@@ -25,17 +25,27 @@ _lg = _logger.getLogger(__name__)
 program = m2u.core.getProgram()
 editor = m2u.core.getEditor()
 
-from .m2uMainWindow import m2uMainWindow
+from PySide import QtGui
 
 uiFolder = m2u.core.getM2uBasePath() + "/ui/"
 
 mainWindow = None
+#windowBaseClass = QtGui.QDockWidget
+windowBaseClass = QtGui.QWidget
+
+def setWindowBaseClass(cls):
+    """ only takes effect when called before createUI """
+    global windowBaseClass
+    windowBaseClass = cls
 
 def createUI(parentQtWindow = None):
+    from . import m2uMainWindow as wmod
     global mainWindow
     if mainWindow is None:
         _lg.info("No m2u window found, creating a new one.")
-        mainWindow = m2uMainWindow(parent = parentQtWindow)
+        #if superClass is not None:
+        #    wmod.setWindowBaseClass(superClass)
+        mainWindow = wmod.m2uMainWindow(parent = parentQtWindow)
         # now let the program and editor add their specific ui parts
         program.ui.addSpecificToCommonUI(mainWindow)
         editor.ui.addSpecificToCommonUI(mainWindow)

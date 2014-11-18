@@ -11,36 +11,45 @@ from PySide import QtCore
 from PySide import QtGui
 #from PySide.QtUiTools import QUiLoader
 
+from . import m2uUI as ui
 from . import m2uIcons as icons
 from .m2uExportWindow import m2uExportWindow
 
 
-class m2uMainWindow(QtGui.QWidget):
+#class m2uMainWindow(QtGui.QDockWidget):
+class m2uMainWindow(ui.windowBaseClass):
     def __init__(self, *args, **kwargs):  
         super(m2uMainWindow, self).__init__(*args, **kwargs)
         
+        #self.setWindowFlags(QtCore.Qt.Tool)
         self.setWindowFlags(QtCore.Qt.Window)
+        #self.setFeatures(self.DockWidgetClosable | self.DockWidgetFloatable)
+        #self.setFloating(True)
         self.setWindowTitle("m2u "+m2u.getVersion()+" ("
                             +program.getName()+","+editor.getName()+")")
         self.setWindowIcon(icons.m2uIcon32)
+        self.setObjectName("m2uMainWindow")
+        self.setStyle(self.parent().style())
         self.buildUI()
         self.connectUI()
 
         self.exportWindow = m2uExportWindow(parent = self)
-        #self.show()
     
     def buildUI(self):
         """create the widgets and layouts"""
         # connect row
-        self.topRowLayout = QtGui.QHBoxLayout()
+        layout = QtGui.QHBoxLayout()
+        layout.setContentsMargins(1,1,1,1)
         self.connectBtn = QtGui.QPushButton(text = "Connect")
-        self.topRowLayout.addWidget(self.connectBtn)
+        layout.addWidget(self.connectBtn)
         self.addressEdit = QtGui.QLineEdit()
-        self.topRowLayout.addWidget(self.addressEdit)
-        self.topRowLayout.addStretch()
+        layout.addWidget(self.addressEdit)
+        layout.addStretch()
         self.settingsBtn = QtGui.QToolButton()
         self.settingsBtn.setIcon(icons.icoSettings)
-        self.topRowLayout.addWidget(self.settingsBtn)
+        layout.addWidget(self.settingsBtn)
+        self.topRowWidget = QtGui.QWidget()
+        self.topRowWidget.setLayout(layout)
         
         # sync options checkboxes
         self.syncOptionsGrp = QtGui.QGroupBox("Sync Whaaat?")
@@ -50,6 +59,7 @@ class m2uMainWindow(QtGui.QWidget):
         self.syncObjectsChkbx = QtGui.QCheckBox("Sync Objects")
         layout.addWidget(self.syncObjectsChkbx,1,0)
         self.syncSelectionChkbx = QtGui.QCheckBox("Sync Selection")
+        self.syncSelectionChkbx.setDisabled(True)
         layout.addWidget(self.syncSelectionChkbx,1,1)
         self.syncVisibilityChkbx = QtGui.QCheckBox("Sync Visibility")
         layout.addWidget(self.syncVisibilityChkbx,2,0)
@@ -80,13 +90,18 @@ class m2uMainWindow(QtGui.QWidget):
         
         # add all onto the main form
         formLayout = QtGui.QVBoxLayout()
-        formLayout.addItem(self.topRowLayout)
+        formLayout.addWidget(self.topRowWidget)
         formLayout.addWidget(self.syncOptionsGrp)
         formLayout.addWidget(self.sendGrp)
         #formLayout.setSpacing(1)
         formLayout.setContentsMargins(1,1,1,1)
         formLayout.addStretch()
+        # - a widget for this dock widget (a dock widget cannot have a layout itself)
         self.setLayout(formLayout)
+        #base = QtGui.QWidget()
+        #base.setLayout(formLayout)
+        #self.setWidget(base)
+        #self.layout = base.layout # yes, overwrite the function
         
         
     def connectUI(self):
@@ -137,8 +152,18 @@ class m2uMainWindow(QtGui.QWidget):
     # ---
 
     def sendSelBtnClicked(self):
-        program.sendSelectedToEd()
+        op = program.ExportOperation( bOverwrite = False, bImport = True, 
+                                      bAssemble = True)
+        assetList,untaggedUniquesDetected,taggedDiscrepancyDetected = op.getExportData()
+        if untaggedUniquesDetected or taggedDiscrepancyDetected:
+            self.exportWindow.setExportDataAndShow(op)
+        else: #TODO: implement bAlwaysShowExportWindow option
+            # there is no need to show the window, so export automatically
+            op.doExport()
 
     def sendSelNewBtnClicked(self):
         self.exportWindow.show()
+        self.exportWindow.raise_()
 
+
+# ------------------------------------------------------------------------------

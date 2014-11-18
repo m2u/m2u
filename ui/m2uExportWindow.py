@@ -21,7 +21,10 @@ continue with the actual export.
 # user Program has native PySide support or not, if the m2u-UI is running in a 
 # detached thread or not.
 # The other option would be to split the export-process into parts which will
-# then be called appropriately from within this UI. ... have to think about that
+# then be called appropriately from within this UI.
+# this would the functions to be called to be passed to this window from the calling
+# process, because it might be implemented in different locations under different 
+# names in different Program-implementations.
 
 import m2u
 program = m2u.core.getProgram()
@@ -30,18 +33,22 @@ editor = m2u.core.getEditor()
 from PySide import QtCore
 from PySide import QtGui
 
+from . import m2uUI as ui
 from . import m2uIcons as icons
 
-class m2uExportWindow(QtGui.QDialog):
+class m2uExportWindow(ui.windowBaseClass):
     def __init__(self, *args, **kwargs):
         super(m2uExportWindow, self).__init__(*args, **kwargs)
         
-        self.setWindowFlags(QtCore.Qt.Dialog)
-        self.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.setWindowFlags(QtCore.Qt.Window)
+        #self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.setWindowTitle("Export")
         self.setWindowIcon(icons.m2uIcon32)
+        self.setStyle(self.parent().style())
         self.buildUI()
         self.connectUI()
+
+        self.exportData = None
 
     def buildUI(self):
         """create the widgets and layouts"""
@@ -133,7 +140,7 @@ class m2uExportWindow(QtGui.QDialog):
 
     def connectUI(self):
         """connect slots to callbacks"""
-        self.cancelBtn.clicked.connect( self.reject )
+        self.cancelBtn.clicked.connect( self.close )
         self.exportAllBtn.clicked.connect( self.exportAllBtnClicked )
         self.assignAssetDataBtn.clicked.connect( self.assignAssetDataBtnClicked )
         self.exportSelectedBtn.clicked.connect( self.exportSelectedBtnClicked )
@@ -150,15 +157,17 @@ class m2uExportWindow(QtGui.QDialog):
     # Actions and Callbacks
     ################################
 
-    def setData(self, data):
-        """ set the temporary data for editing
-
-        call before showing the dialogue
+    def setExportOperationAndShow(self, operation):
+        """ set the temporary data for editing and show the window
+        all follow-up export tasks will be called from within the ui
 
         """
-        pass
+        assetList,untaggedUniquesDetected,taggedDiscrepancyDetected = operation.getExportData()
+        #for e in assetList
+        self.show()
+        self.raise_()
 
-    def getResult(self):
+    def getExportResult(self):
         """ get the result of the dialog
 
         0 = cancelled
@@ -167,11 +176,12 @@ class m2uExportWindow(QtGui.QDialog):
         call after the dialog has returned
 
         """
+        pass
 
-    def getData(self):
+    def getExportData(self):
         """ get the - possibly edited - data
 
-        you will only receive valid data if the dialog was not cancelled
+        you will only receive useful data if the dialog was not cancelled
         
         """
         pass
@@ -179,13 +189,13 @@ class m2uExportWindow(QtGui.QDialog):
     # ---
     
     def exportAllBtnClicked(self):
-        self.accept()
+        self.close()
 
     def exportSelectedBtnClicked(self):
-        self.accept()
+        self.close()
 
     def assignAssetDataBtnClicked(self):
-        self.accept()
+        self.close()
 
     # ---
 

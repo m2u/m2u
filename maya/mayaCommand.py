@@ -171,10 +171,6 @@ def exportSelectedToFBX(path):
 
 
 
-#def printWarning(s):
-#    pm.warning(s)
-
-
 def sendSelectedToEdOverwrite():
     """ send selected by exporting them again over their
     AssetPath file and import that again in the Editor.

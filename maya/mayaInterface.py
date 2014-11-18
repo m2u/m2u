@@ -55,4 +55,5 @@ isLayerSyncing = _la.isLayerSyncing
 importFile = _cmd.importFile
 
 
-sendSelectedToEd = _cmd.sendSelectedToEd
+from m2u.maya.mayaExportOperation import ExportOperation
+sendSelectedToEd = _cmd.sendSelectedToEd #TODO: remove
