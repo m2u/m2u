@@ -155,8 +155,8 @@ class m2uMainWindow(ui.windowBaseClass):
         op = program.ExportOperation( bOverwrite = False, bImport = True, 
                                       bAssemble = True)
         assetList,untaggedUniquesDetected,taggedDiscrepancyDetected = op.getExportData()
-        if untaggedUniquesDetected or taggedDiscrepancyDetected:
-            self.exportWindow.setExportDataAndShow(op)
+        if untaggedUniquesDetected or taggedDiscrepancyDetected or True:
+            self.exportWindow.setExportOperationAndShow(op)
         else: #TODO: implement bAlwaysShowExportWindow option
             # there is no need to show the window, so export automatically
             op.doExport()

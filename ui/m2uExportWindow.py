@@ -8,23 +8,7 @@ continue with the actual export.
 
 """
 
-# TODO: i would love to have this dialogue to not be required to be modal
-# in the current implementation, the export process is blocked until this dialogue
-# returns, which makes it impossible for the user to interact with the viewports
-# or so to get response as to which objects in the scene are which in the export 
-# window. The export process can only continue if necessary data was returned from
-# the dialogue.
-# alternatives would be to make the dialogue not modal and implement a while-loop
-# with integrated event-loop-processing to make the application not hang while
-# waiting for the dialogue to return. The problematic point here is the question of
-# where to put the event-loop-processing. This may differ depending on if the
-# user Program has native PySide support or not, if the m2u-UI is running in a 
-# detached thread or not.
-# The other option would be to split the export-process into parts which will
-# then be called appropriately from within this UI.
-# this would the functions to be called to be passed to this window from the calling
-# process, because it might be implemented in different locations under different 
-# names in different Program-implementations.
+import os
 
 import m2u
 program = m2u.core.getProgram()
@@ -35,6 +19,7 @@ from PySide import QtGui
 
 from . import m2uUI as ui
 from . import m2uIcons as icons
+from m2u.helper.assetHelper import AssetListEntry
 
 class m2uExportWindow(ui.windowBaseClass):
     def __init__(self, *args, **kwargs):
@@ -48,7 +33,13 @@ class m2uExportWindow(ui.windowBaseClass):
         self.buildUI()
         self.connectUI()
 
-        self.exportData = None
+        #self.exportData = None
+
+        self.italicFont = QtGui.QFont()
+        self.italicFont.setItalic(True)
+        self.instanceBrush = QtGui.QBrush(QtCore.Qt.darkGray)
+        self.discrepancyBrush = QtGui.QBrush(QtCore.Qt.darkRed)
+        self.untaggedBrush = QtGui.QBrush(QtCore.Qt.darkYellow)
 
     def buildUI(self):
         """create the widgets and layouts"""
@@ -59,7 +50,11 @@ class m2uExportWindow(ui.windowBaseClass):
         # - asset tree
         self.assetTree = QtGui.QTreeWidget()
         self.assetTree.setColumnCount(2)
-        self.assetTree.setHeaderLabels(["Assets/Instances","Subpath"])
+        self.assetTree.setHeaderLabels(["Assets / Instances","Subpath"])
+        self.assetTree.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.assetTree.setColumnWidth(0,160)
+        #self.assetTree.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
+        #self.assetTree.setIndentation(2)
         leftLayout.addWidget(self.assetTree)
         # - left buttons
         layout = QtGui.QGridLayout()
@@ -67,8 +62,10 @@ class m2uExportWindow(ui.windowBaseClass):
         self.selectInstancesBtn.setDisabled(True)
         layout.addWidget(self.selectInstancesBtn,0,0)
         self.removeBtn = QtGui.QPushButton("Remove")
+        self.removeBtn.setDisabled(True)
         layout.addWidget(self.removeBtn,1,0)
         self.makeNewBtn = QtGui.QPushButton("Make New Unique(s)")
+        self.makeNewBtn.setDisabled(True)
         layout.addWidget(self.makeNewBtn,1,1)
         
         leftLayout.addItem(layout)
@@ -132,6 +129,10 @@ class m2uExportWindow(ui.windowBaseClass):
         splitter = QtGui.QSplitter()
         splitter.addWidget(leftWidget)
         splitter.addWidget(rightWidget)
+        leftWidget.resize(350,200)
+        #leftWidget.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
+        #rightWidget.setSizePolicy(QtGui.QSizePolicy.Maximum,QtGui.QSizePolicy.Preferred)
+        #splitter.setStretchFactor(0,100)
         layout = QtGui.QVBoxLayout()
         layout.setSpacing(1)
         layout.setContentsMargins(1,1,1,1)
@@ -162,51 +163,128 @@ class m2uExportWindow(ui.windowBaseClass):
         all follow-up export tasks will be called from within the ui
 
         """
+        self.operation = operation
+        self.assetTree.clear()
+        self.assetItemList = []
         assetList,untaggedUniquesDetected,taggedDiscrepancyDetected = operation.getExportData()
-        #for e in assetList
+        for entry in assetList:
+            lpath,fext = os.path.splitext(entry.assetPath)
+            fpath,fname = os.path.split(lpath)
+            assetItem = QtGui.QTreeWidgetItem(self.assetTree)
+            assetItem.setText(0,fname)
+            assetItem.setText(1,fpath)
+            assetItem.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsEditable
+                               |QtCore.Qt.ItemIsSelectable)
+            #assetItem.setIcon(0,icons.icoMesh)
+            self.assetItemList.append(assetItem)
+            for objTuple in entry.objList:
+                objName = objTuple[0]
+                objItem = QtGui.QTreeWidgetItem(assetItem)
+                objItem.setText(0,objName)
+                objItem.setFont(0,self.italicFont)
+                #objItem.setDisabled(True)
+                objItem.setForeground(0,self.instanceBrush)
+                objItem.setIcon(0,icons.icoTransform)
+                objItem.objTuple = objTuple # so we don't have to search that data later
+                
         self.show()
         self.raise_()
 
-    def getExportResult(self):
-        """ get the result of the dialog
+    # def getExportResult(self):
+    #     """ get the result of the dialog
+    #     0 = cancelled
+    #     1 = export
+    #     2 = assign-only
+    #     call after the dialog has returned
+    #     """
+    #     pass
 
-        0 = cancelled
-        1 = export
-        2 = assign-only
-        call after the dialog has returned
-
-        """
-        pass
-
-    def getExportData(self):
-        """ get the - possibly edited - data
-
-        you will only receive useful data if the dialog was not cancelled
+    def _getExportData(self):
+        """ reassemble the -possibly edited- export data from the tree-entries
         
         """
-        pass
+        assetList = []
+        #for i in range(0,self.assetTree.topLevelItemCount()-1):
+        for item in self.assetItemList:
+            path = item.text(1)
+            if not path.endswith("/") and len(path)>0:
+                path = path+"/"
+            path = path + item.text(0)
+            entry = AssetListEntry(path)
+            for i in range(0,item.childCount()-1):
+                child = item.child(i)
+                entry.append(child.objTuple)
+            assetList.append(entry)
+        return assetList
+                
 
     # ---
     
     def exportAllBtnClicked(self):
+        assetList = self._getExportData()
+        self.operation.setEditedData(assetList)
+        self.operation.doExport()
         self.close()
 
     def exportSelectedBtnClicked(self):
+        assetList = []
+        #for i in range(0,self.assetTree.topLevelItemCount()-1):
+        for item in self.assetItemList:
+            if not item.isSelected():
+                continue
+            path = item.text(1)
+            if not path.endswith("/") and len(path)>0:
+                path = path+"/"
+            path = path + item.text(0)
+            entry = AssetListEntry(path)
+            for i in range(0,item.childCount()-1):
+                child = item.child(i)
+                entry.append(child.objTuple)
+            assetList.append(entry)
+        self.operation.setEditedData(assetList)
+        self.operation.doExport()
         self.close()
 
     def assignAssetDataBtnClicked(self):
+        assetList = self._getExportData()
+        self.operation.setEditedData(assetList)
+        self.operation.doAssignOnly()
         self.close()
 
     # ---
 
     def subpathAssignBtnClicked(self):
-        pass
+        for item in self.assetItemList:
+            if not item.isSelected():
+                continue
+            item.setText(1,self.subpathEdit.text())
 
     def prefixAssignBtnClicked(self):
-        pass
+        for item in self.assetItemList:
+            if not item.isSelected():
+                continue
+            text = item.text(0)
+            prefix = self.prefixEdit.text()
+            if text.startswith(prefix):
+                continue
+            text = prefix + text
+            item.setText(0,text)
 
     def suffixAssignBtnClicked(self):
-        pass
+        for item in self.assetItemList:
+            if not item.isSelected():
+                continue
+            text = item.text(0)
+            suffix = self.suffixEdit.text()
+            if text.endswith(suffix):
+                continue
+            if suffix.startswith("_"): 
+                #TODO: maybe make user-settings set tuple of valid suffix delimiters?
+                index = text.rfind("_")
+                if index>-1:
+                    text = text[:index]
+            text = text + suffix
+            item.setText(0,text)
 
     # ---
 

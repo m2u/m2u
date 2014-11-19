@@ -15,6 +15,7 @@ from PySide import QtGui
 
 fpath = os.path.abspath(__file__)
 fdir = os.path.dirname(fpath)
+icoFetch = QtGui.QIcon(fdir+"/icoFetch.png")
 
 class ue4PSUIFetchWidget(QtGui.QWidget):
     def __init__(self, *args, **kwargs):  
@@ -25,6 +26,7 @@ class ue4PSUIFetchWidget(QtGui.QWidget):
 
     def buildUI(self):
         self.fetchSelectedBtn = QtGui.QPushButton(text = "Fast Fetch Selected")
+        self.fetchSelectedBtn.setIcon(icoFetch)
         
         layout = QtGui.QHBoxLayout()
         layout.addWidget(self.fetchSelectedBtn)

@@ -12,3 +12,6 @@ from PySide import QtGui
 icoSettings = QtGui.QIcon(resFolder+"icoSettings.png")
 m2uIcon32 = QtGui.QIcon(resFolder+"m2uIcon32.png")
 m2uIcon128 = QtGui.QIcon(resFolder+"m2uIcon128.png")
+
+icoTransform = QtGui.QIcon(resFolder+"icoTransform.png")
+icoMesh = QtGui.QIcon(resFolder+"icoMesh.png")

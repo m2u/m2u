@@ -170,7 +170,7 @@ def exportSelectedToFBX(path):
     pm.mel.eval(expcmd)
 
 
-
+#TODO: remove
 def sendSelectedToEdOverwrite():
     """ send selected by exporting them again over their
     AssetPath file and import that again in the Editor.
@@ -191,7 +191,7 @@ def sendSelectedToEdOverwrite():
     """
     pass
 
-
+#TODO: remove
 def sendSelectedToEdAddMissingOnly():
     """ send selected by telling the editor to add assets with
     "AssetPath" to the level. Do as little exporting and importing
@@ -212,6 +212,7 @@ def sendSelectedToEdAddMissingOnly():
     """
     pass
 
+#TODO: remove
 def sendSelectedToEdAsNew():
     """ send selected as new assets.
     This will ignore any "AssetPath" attribute on the objects
@@ -231,7 +232,7 @@ def sendSelectedToEdAsNew():
     pass
 
 
-
+#TODO: remove
 def sendSelectedToEdExportOnly(selectedMeshes):
     """
     there is the special case where there is one type of mesh in the scene
@@ -392,13 +393,13 @@ def sendSelectedToEdExportOnly(selectedMeshes):
         fileList.append(obj.attr("AssetPath").get())
     m2u.core.getEditor().importAssetsBatch(fileList)
 
-
+#TODO: remove
 def sendSelectedToEd():
     selectedMeshes = getSelectedMeshes()
     sendSelectedToEdExportOnly(selectedMeshes)
     assembleScene(selectedMeshes)
 
-
+#TODO: remove
 def getSelectedMeshes():
     # 1. get selected objects (only transform nodes)
     selectedObjects = pm.selected(type="transform")
@@ -415,7 +416,7 @@ def getSelectedMeshes():
     # TODO: maybe filter other transferable stuff like lights or so
     return selectedMeshes
 
-
+#TODO: remove
 def assembleScene(selectedMeshes):
     objInfoList = []
 
