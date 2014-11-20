@@ -40,6 +40,13 @@ def getAndSetValueDefaultIfError(section, option, defaultstr, write=True):
             config.set(section, option, defaultstr)
         return defaultstr
 
+def setOptionCreateSection(section, option, value):
+    """ set the option, if the section does not exist, create it automatically
+    """
+    if not config.has_section(section):
+        config.add_section(section)
+    config.set(section, option, value)
+
 def saveConfig():
     with open(m2upath+'/settings.cfg', 'wb') as configfile:
         config.write(configfile)

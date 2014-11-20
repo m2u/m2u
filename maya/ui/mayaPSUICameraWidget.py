@@ -27,6 +27,7 @@ class mayaPSUICameraWidget(QtGui.QWidget):
     def buildUI(self):
         self.setupCameraBtn = QtGui.QPushButton(text = "Setup Cameras")
         self.setupCameraBtn.setIcon(icoCamera)
+        self.setupCameraBtn.setToolTip("Set clip planes, FOV and positions of Maya's default cameras to work better with game engine dimensions.")
         
         layout = QtGui.QHBoxLayout()
         layout.addWidget(self.setupCameraBtn)

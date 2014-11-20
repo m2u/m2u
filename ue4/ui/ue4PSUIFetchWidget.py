@@ -27,6 +27,7 @@ class ue4PSUIFetchWidget(QtGui.QWidget):
     def buildUI(self):
         self.fetchSelectedBtn = QtGui.QPushButton(text = "Fast Fetch Selected")
         self.fetchSelectedBtn.setIcon(icoFetch)
+        self.fetchSelectedBtn.setToolTip("Get the selected objects from the Editor by exporting to a single .fbx file. ")
         
         layout = QtGui.QHBoxLayout()
         layout.addWidget(self.fetchSelectedBtn)

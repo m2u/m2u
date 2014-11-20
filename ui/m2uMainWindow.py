@@ -14,6 +14,7 @@ from PySide import QtGui
 from . import m2uUI as ui
 from . import m2uIcons as icons
 from .m2uExportWindow import m2uExportWindow
+from .m2uExportSettingsWidget import m2uExportSettingsWidget
 
 
 #class m2uMainWindow(QtGui.QDockWidget):
@@ -29,11 +30,12 @@ class m2uMainWindow(ui.windowBaseClass):
                             +program.getName()+","+editor.getName()+")")
         self.setWindowIcon(icons.m2uIcon32)
         self.setObjectName("m2uMainWindow")
-        self.setStyle(self.parent().style())
+
+        self.exportWindow = m2uExportWindow(parent = self)
+
         self.buildUI()
         self.connectUI()
 
-        self.exportWindow = m2uExportWindow(parent = self)
     
     def buildUI(self):
         """create the widgets and layouts"""
@@ -47,6 +49,7 @@ class m2uMainWindow(ui.windowBaseClass):
         layout.addStretch()
         self.settingsBtn = QtGui.QToolButton()
         self.settingsBtn.setIcon(icons.icoSettings)
+        self.settingsBtn.setDisabled(True)
         layout.addWidget(self.settingsBtn)
         self.topRowWidget = QtGui.QWidget()
         self.topRowWidget.setLayout(layout)
@@ -74,17 +77,23 @@ class m2uMainWindow(ui.windowBaseClass):
         layout.setSpacing(1)
         layout.setContentsMargins(1,1,1,1)
         self.sendSelBtn = QtGui.QToolButton()
-        self.sendSelBtn.setIcon(icons.m2uIcon128)
+        self.sendSelBtn.setIcon(icons.icoSendToEd)
         self.sendSelBtn.setIconSize(QtCore.QSize(64,32))
+        self.sendSelBtn.setToolTip("Send selected objects to Editor, assemble the scene. Export assets if necessary.")
         layout.addWidget(self.sendSelBtn)
-        self.sendSelNewBtn = QtGui.QToolButton()
-        self.sendSelNewBtn.setIcon(icons.m2uIcon128)
-        self.sendSelNewBtn.setIconSize(QtCore.QSize(64,32))
-        layout.addWidget(self.sendSelNewBtn)
+        self.exportSelBtn = QtGui.QToolButton()
+        self.exportSelBtn.setIcon(icons.icoExportToEd)
+        self.exportSelBtn.setIconSize(QtCore.QSize(64,32))
+        self.exportSelBtn.setToolTip("Export assets of selected objects to Editor. Do not assemble the scene.")
+        layout.addWidget(self.exportSelBtn)
         layout.addStretch()
         self.sendOptionsBtn = QtGui.QToolButton()
         self.sendOptionsBtn.setIcon(icons.icoSettings)
         self.sendOptionsBtn.setIconSize(QtCore.QSize(32,32))
+        self.exportSettingsWgt = m2uExportSettingsWidget(parent = self,
+                                                         widget = self.sendOptionsBtn)
+        self.sendOptionsBtn.clicked.connect(self.exportSettingsWgt.show)
+        #self.exportSettingsWgt.setParent(self.sendOptionsBtn)
         layout.addWidget(self.sendOptionsBtn)
         self.sendGrp.setLayout(layout)
         
@@ -116,7 +125,7 @@ class m2uMainWindow(ui.windowBaseClass):
         self.syncLayersChkbx.toggled.connect( self.syncLayersChkbxClicked )
         
         self.sendSelBtn.clicked.connect( self.sendSelBtnClicked )
-        self.sendSelNewBtn.clicked.connect( self.sendSelNewBtnClicked )
+        self.exportSelBtn.clicked.connect( self.exportSelBtnClicked )
     
     
     ################################
@@ -151,19 +160,27 @@ class m2uMainWindow(ui.windowBaseClass):
 
     # ---
 
+    # TODO: what about bOverwrite, once it is implemented?
     def sendSelBtnClicked(self):
         op = program.ExportOperation( bOverwrite = False, bImport = True, 
                                       bAssemble = True)
+        self._doExport(op)
+
+    def _doExport(self, op):
         assetList,untaggedUniquesDetected,taggedDiscrepancyDetected = op.getExportData()
-        if untaggedUniquesDetected or taggedDiscrepancyDetected or True:
+        # show the export window if necessary
+        if (untaggedUniquesDetected or taggedDiscrepancyDetected 
+        or self.exportSettingsWgt.bAlwaysShowExportWindow):
             self.exportWindow.setExportOperationAndShow(op)
-        else: #TODO: implement bAlwaysShowExportWindow option
+        else:
             # there is no need to show the window, so export automatically
             op.doExport()
 
-    def sendSelNewBtnClicked(self):
-        self.exportWindow.show()
-        self.exportWindow.raise_()
+    def exportSelBtnClicked(self):
+        # TODO: overwrite or not?
+        op = program.ExportOperation( bOverwrite = True, bImport = True, 
+                                      bAssemble = False)
+        self._doExport(op)
 
 
 # ------------------------------------------------------------------------------

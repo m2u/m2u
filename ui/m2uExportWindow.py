@@ -21,6 +21,8 @@ from . import m2uUI as ui
 from . import m2uIcons as icons
 from m2u.helper.assetHelper import AssetListEntry
 
+from .m2uSubfolderBrowseDialog import m2uSubfolderBrowseDialog
+
 class m2uExportWindow(ui.windowBaseClass):
     def __init__(self, *args, **kwargs):
         super(m2uExportWindow, self).__init__(*args, **kwargs)
@@ -29,17 +31,19 @@ class m2uExportWindow(ui.windowBaseClass):
         #self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.setWindowTitle("Export")
         self.setWindowIcon(icons.m2uIcon32)
-        self.setStyle(self.parent().style())
-        self.buildUI()
-        self.connectUI()
-
-        #self.exportData = None
 
         self.italicFont = QtGui.QFont()
         self.italicFont.setItalic(True)
         self.instanceBrush = QtGui.QBrush(QtCore.Qt.darkGray)
-        self.discrepancyBrush = QtGui.QBrush(QtCore.Qt.darkRed)
-        self.untaggedBrush = QtGui.QBrush(QtCore.Qt.darkYellow)
+        self.discrepancyBrush = QtGui.QBrush(QtCore.Qt.red)
+        self.untaggedBrush = QtGui.QBrush(QtCore.Qt.yellow)
+        
+        self.browseDialog = m2uSubfolderBrowseDialog()
+        
+        self.buildUI()
+        self.connectUI()
+
+        #self.exportData = None
 
     def buildUI(self):
         """create the widgets and layouts"""
@@ -56,6 +60,17 @@ class m2uExportWindow(ui.windowBaseClass):
         #self.assetTree.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
         #self.assetTree.setIndentation(2)
         leftLayout.addWidget(self.assetTree)
+        # - info labels
+        self.discrepancyLbl = QtGui.QLabel("Objects with same AssetPath but different geometry detected!")
+        p = self.discrepancyLbl.palette()
+        p.setBrush(QtGui.QPalette.Active, QtGui.QPalette.WindowText, self.discrepancyBrush)
+        self.discrepancyLbl.setPalette(p)
+        self.untaggedLbl = QtGui.QLabel("Untagged objects detected, assigned auto-generated names.")
+        p = self.untaggedLbl.palette()
+        p.setBrush(QtGui.QPalette.Active, QtGui.QPalette.WindowText, self.untaggedBrush)
+        self.untaggedLbl.setPalette(p)
+        leftLayout.addWidget(self.discrepancyLbl)
+        leftLayout.addWidget(self.untaggedLbl)
         # - left buttons
         layout = QtGui.QGridLayout()
         self.selectInstancesBtn = QtGui.QPushButton("Select Instances")
@@ -86,6 +101,8 @@ class m2uExportWindow(ui.windowBaseClass):
         self.subpathEdit = QtGui.QLineEdit()
         subpathLayout.addWidget(self.subpathEdit,1,0)
         self.subpathBrowseBtn = QtGui.QToolButton()
+        self.subpathBrowseBtn.setIcon(icons.icoBrowse)
+        self.subpathBrowseBtn.setToolTip("Browse")
         subpathLayout.addWidget(self.subpathBrowseBtn,1,1)
         self.subpathAssignBtn = QtGui.QPushButton("Set")
         subpathLayout.addWidget(self.subpathAssignBtn,1,2)
@@ -112,14 +129,22 @@ class m2uExportWindow(ui.windowBaseClass):
         # - right buttons
         layout = QtGui.QGridLayout()
         layout.setColumnStretch(0,1)
-        self.assignAssetDataBtn = QtGui.QPushButton("Assign Asset Data (No Export)")
-        layout.addWidget(self.assignAssetDataBtn,0,1,1,2)
+        self.assignAssetDataBtn = QtGui.QPushButton("Assign Edited Data")
+        self.assignAssetDataBtn.setToolTip("Only assign the data to the objects in the scene. Don't export.")
+        self.assignAssetDataBtn.setIcon(icons.icoDoAssign)
+        #layout.addWidget(self.assignAssetDataBtn,0,1,1,2)
+        layout.addWidget(self.assignAssetDataBtn,0,1)
         self.exportSelectedBtn = QtGui.QPushButton("Export Selected")
-        layout.addWidget(self.exportSelectedBtn,1,1,1,2)
+        self.exportSelectedBtn.setToolTip("Export only the assets that are selected in the list.")
+        self.exportSelectedBtn.setIcon(icons.icoDoExportSel)
+        #layout.addWidget(self.exportSelectedBtn,1,1,1,2)
+        layout.addWidget(self.exportSelectedBtn,1,1)
         self.cancelBtn = QtGui.QPushButton("Cancel")
-        layout.addWidget(self.cancelBtn,2,1)
-        self.exportAllBtn = QtGui.QPushButton("Export All")
-        layout.addWidget(self.exportAllBtn,2,2)
+        self.cancelBtn.setIcon(icons.icoCancel)
+        layout.addWidget(self.cancelBtn,2,0)
+        self.exportAllBtn = QtGui.QPushButton("Export")
+        self.exportAllBtn.setIcon(icons.icoDoExport)
+        layout.addWidget(self.exportAllBtn,2,1)
         
         rightLayout.addStretch()
         rightLayout.addItem(layout)
@@ -154,6 +179,8 @@ class m2uExportWindow(ui.windowBaseClass):
         self.removeBtn.clicked.connect( self.removeBtnClicked )
         self.makeNewBtn.clicked.connect( self.makeNewBtnClicked )
 
+        self.subpathBrowseBtn.clicked.connect( self.subpathBrowseBtnClicked )
+
     ################################
     # Actions and Callbacks
     ################################
@@ -167,9 +194,13 @@ class m2uExportWindow(ui.windowBaseClass):
         self.assetTree.clear()
         self.assetItemList = []
         assetList,untaggedUniquesDetected,taggedDiscrepancyDetected = operation.getExportData()
+        self.discrepancyLbl.setVisible(taggedDiscrepancyDetected)
+        self.untaggedLbl.setVisible(untaggedUniquesDetected)
         for entry in assetList:
             lpath,fext = os.path.splitext(entry.assetPath)
             fpath,fname = os.path.split(lpath)
+            if len(fpath)==0: # if there is no subpath
+                fpath = "/" # let us display at least a slash so the user sees it
             assetItem = QtGui.QTreeWidgetItem(self.assetTree)
             assetItem.setText(0,fname)
             assetItem.setText(1,fpath)
@@ -211,7 +242,7 @@ class m2uExportWindow(ui.windowBaseClass):
                 path = path+"/"
             path = path + item.text(0)
             entry = AssetListEntry(path)
-            for i in range(0,item.childCount()-1):
+            for i in range(0,item.childCount()):
                 child = item.child(i)
                 entry.append(child.objTuple)
             assetList.append(entry)
@@ -237,7 +268,7 @@ class m2uExportWindow(ui.windowBaseClass):
                 path = path+"/"
             path = path + item.text(0)
             entry = AssetListEntry(path)
-            for i in range(0,item.childCount()-1):
+            for i in range(0,item.childCount()):
                 child = item.child(i)
                 entry.append(child.objTuple)
             assetList.append(entry)
@@ -286,6 +317,17 @@ class m2uExportWindow(ui.windowBaseClass):
             text = text + suffix
             item.setText(0,text)
 
+    def subpathBrowseBtnClicked(self):
+        basePath = m2u.core.getPipeline().getProjectExportDir()
+        self.browseDialog.setTopDirectory(basePath)
+        fullPath = basePath + "/" + self.subpathEdit.text()
+        self.browseDialog.setDirectory(fullPath)
+        result = self.browseDialog.exec_()
+        if result == 1:
+            subpath = self.browseDialog.directory().path()
+            subpath = subpath[len(basePath):]
+            self.subpathEdit.setText(subpath)
+
     # ---
 
     def selectInstancesBtnClicked(self):
@@ -296,3 +338,4 @@ class m2uExportWindow(ui.windowBaseClass):
 
     def makeNewBtnClicked(self):
         pass
+

@@ -45,7 +45,8 @@ def createUI(parentQtWindow = None):
         _lg.info("No m2u window found, creating a new one.")
         #if superClass is not None:
         #    wmod.setWindowBaseClass(superClass)
-        mainWindow = wmod.m2uMainWindow(parent = parentQtWindow)
+        #mainWindow = wmod.m2uMainWindow(parent = parentQtWindow)
+        mainWindow = wmod.m2uMainWindow()
         # now let the program and editor add their specific ui parts
         program.ui.addSpecificToCommonUI(mainWindow)
         editor.ui.addSpecificToCommonUI(mainWindow)

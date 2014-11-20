@@ -159,7 +159,7 @@ def exportSelectedToFBX(path):
         os.remove(path)
     # TODO: fbxExportPreset should be Editor-specific
     sfpath = m2u.core.getPipeline().getFBXSettingsFile()
-    _lg.debug("settings file path is: "+sfpath)
+    _lg.debug("FBX settings file path is: "+sfpath)
     lsfcmd = "FBXLoadExportPresetFile -f \"%s\";" % sfpath.replace("\\","/")
     pm.mel.eval(lsfcmd)
     _lg.debug("Exporting File: "+path)
@@ -390,7 +390,15 @@ def sendSelectedToEdExportOnly(selectedMeshes):
     #6. tell the editor to import all the uniques
     fileList = []
     for obj in taggedUniqueDict.keys():
-        fileList.append(obj.attr("AssetPath").get())
+        path = obj.attr("AssetPath").get()
+        lpath,ext = os.path.splitext(path)
+        if ext != ".fbx":
+            ext = ".fbx"
+        pathWithExt = lpath + ext
+        # NOTE: we assume fbx, but a user-set asset path may not have a .fbx ending
+        # the file is definitely written as .fbx, but the editor may not be able to
+        # find the import file if the extension is missing, so we make sure to add it
+        fileList.append(pathWithExt)
     m2u.core.getEditor().importAssetsBatch(fileList)
 
 #TODO: remove
