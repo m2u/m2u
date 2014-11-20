@@ -55,7 +55,7 @@ def sendMessage(MESSAGE):
 def _receiveMessage():
     if _s is  None:
         print "Not connected"
-        return
+        return None
     BUFFER_SIZE = 1024
     data = _s.recv(BUFFER_SIZE)
     #print "client received data:", data

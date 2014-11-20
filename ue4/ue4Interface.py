@@ -25,6 +25,9 @@ from m2u.ue4 import ue4Layer as _l #layer
 from m2u.ue4 import ue4Export
 from m2u.ue4 import ue4Import as _i
 
+# the ue4 ui module, referenced by other modules through here!
+from m2u.ue4 import ui
+
 # -- General --
 def getName():
     return "UE4"

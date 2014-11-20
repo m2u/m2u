@@ -26,7 +26,8 @@ from m2u.maya import mayaObjectTracker as _obj
 from m2u.maya import mayaVisibilityTracker as _vis
 from m2u.maya import mayaLayerTracker as _la
 
-from m2u.maya import mayaUI as ui
+# the maya ui module, referenced by other modules through here!
+from m2u.maya import ui
 
 # -- General --
 def getName():
@@ -54,4 +55,5 @@ isLayerSyncing = _la.isLayerSyncing
 importFile = _cmd.importFile
 
 
-sendSelectedToEd = _cmd.sendSelectedToEd
+from m2u.maya.mayaExportOperation import ExportOperation
+sendSelectedToEd = _cmd.sendSelectedToEd #TODO: remove

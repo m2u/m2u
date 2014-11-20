@@ -1,1 +1,1 @@
-from uiModule import *
+from .m2uUI import *

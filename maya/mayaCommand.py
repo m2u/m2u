@@ -159,7 +159,7 @@ def exportSelectedToFBX(path):
         os.remove(path)
     # TODO: fbxExportPreset should be Editor-specific
     sfpath = m2u.core.getPipeline().getFBXSettingsFile()
-    _lg.debug("settings file path is: "+sfpath)
+    _lg.debug("FBX settings file path is: "+sfpath)
     lsfcmd = "FBXLoadExportPresetFile -f \"%s\";" % sfpath.replace("\\","/")
     pm.mel.eval(lsfcmd)
     _lg.debug("Exporting File: "+path)
@@ -170,11 +170,7 @@ def exportSelectedToFBX(path):
     pm.mel.eval(expcmd)
 
 
-
-#def printWarning(s):
-#    pm.warning(s)
-
-
+#TODO: remove
 def sendSelectedToEdOverwrite():
     """ send selected by exporting them again over their
     AssetPath file and import that again in the Editor.
@@ -195,7 +191,7 @@ def sendSelectedToEdOverwrite():
     """
     pass
 
-
+#TODO: remove
 def sendSelectedToEdAddMissingOnly():
     """ send selected by telling the editor to add assets with
     "AssetPath" to the level. Do as little exporting and importing
@@ -216,6 +212,7 @@ def sendSelectedToEdAddMissingOnly():
     """
     pass
 
+#TODO: remove
 def sendSelectedToEdAsNew():
     """ send selected as new assets.
     This will ignore any "AssetPath" attribute on the objects
@@ -235,7 +232,7 @@ def sendSelectedToEdAsNew():
     pass
 
 
-
+#TODO: remove
 def sendSelectedToEdExportOnly(selectedMeshes):
     """
     there is the special case where there is one type of mesh in the scene
@@ -393,16 +390,24 @@ def sendSelectedToEdExportOnly(selectedMeshes):
     #6. tell the editor to import all the uniques
     fileList = []
     for obj in taggedUniqueDict.keys():
-        fileList.append(obj.attr("AssetPath").get())
+        path = obj.attr("AssetPath").get()
+        lpath,ext = os.path.splitext(path)
+        if ext != ".fbx":
+            ext = ".fbx"
+        pathWithExt = lpath + ext
+        # NOTE: we assume fbx, but a user-set asset path may not have a .fbx ending
+        # the file is definitely written as .fbx, but the editor may not be able to
+        # find the import file if the extension is missing, so we make sure to add it
+        fileList.append(pathWithExt)
     m2u.core.getEditor().importAssetsBatch(fileList)
 
-
+#TODO: remove
 def sendSelectedToEd():
     selectedMeshes = getSelectedMeshes()
     sendSelectedToEdExportOnly(selectedMeshes)
     assembleScene(selectedMeshes)
 
-
+#TODO: remove
 def getSelectedMeshes():
     # 1. get selected objects (only transform nodes)
     selectedObjects = pm.selected(type="transform")
@@ -419,7 +424,7 @@ def getSelectedMeshes():
     # TODO: maybe filter other transferable stuff like lights or so
     return selectedMeshes
 
-
+#TODO: remove
 def assembleScene(selectedMeshes):
     objInfoList = []
 
