@@ -16,9 +16,9 @@ def selectByNames(namesList):
     :param namesList: list containing the object names
 
     """
-    for name in namesList:
-        msg = ("SelectByName "+name)
-        ue4Conn.sendMessage(msg)
+    names = "["+(','.join(namesList))+"]"
+    msg = ("SelectByNames "+names)
+    ue4Conn.sendMessage(msg)
 
 
 def deselectAll():
@@ -32,6 +32,6 @@ def deselectByNames(namesList):
     :param namesList: list containing the object names
 
     """
-    for name in namesList:
-        msg = ("DeselectByName "+name)
-        ue4Conn.sendMessage(msg)
+    names = "["+(','.join(namesList))+"]"
+    msg = ("DeselectByNames "+names)
+    ue4Conn.sendMessage(msg)

@@ -265,8 +265,8 @@ def _onSelectionChangedCB(data):
     """
     m2u.core.getEditor().deselectAll()
     _createObjectScriptJobsNoSelChanged()
-    for obj in pm.selected():
-        m2u.core.getEditor().selectByNames([obj.name()])
+    namesList = [obj.name() for obj in pm.selected()]
+    m2u.core.getEditor().selectByNames(namesList)
 
 
 def _createObjectScriptJobsNoSelChanged():

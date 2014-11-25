@@ -118,7 +118,7 @@ def _onShowHidden(cmd):
     
     # show list of objects
     elif "{" in cmd:
-        #print "SHOWING list of objects DETECTED"
+        print "SHOWING list of objects DETECTED, not implemented!!"
         #TODO: maybe implement this showing of specific objects some day 
         pass
     
