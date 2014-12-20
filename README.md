@@ -19,7 +19,8 @@ Using the script in Maya
 ```python
 import m2u
 m2u.core.initialize("maya","ue4")
-m2u.core.getProgram().ui.createUI()```
+m2u.core.getProgram().ui.createUI()
+```
 And then hit the connect button with the Editor running and listening.
 
 **NOTE:** You will have to use Z-up space in Maya currently.
