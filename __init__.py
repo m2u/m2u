@@ -1,8 +1,4 @@
 """ m2u """
-import m2u.core
+from . import core
 
-def getVersion():
-    return "v0.2"
-
-#def isDebugMode():
-#    return True
+__version__ = "0.2.0"

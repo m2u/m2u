@@ -2,3 +2,5 @@
 *.pyc
 #ignore files that start with a dot
 .*
+
+settings.cfg

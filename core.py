@@ -1,98 +1,92 @@
-
 """
-the window to the world.
+The window to the world.
 
-The core module is the only reference other systems (like the UI) should need
-to know. To access the actual program or editor interfaces, get the 
-module by calling :func:`getProgram` and :func:`getEditor`. 
-
+The core module is the only reference other systems (like the UI)
+should need to import.
 """
 
 import os
-import m2u
-from m2u import logger as _logger
-_lg = _logger.getLogger(__name__)
-import m2u.settings as settings
+import sys
+import logging
 
-def getM2uBasePath():
-    """ get the path to the m2u folder (the folder this file is in)
+from . import settings
+from . import logger
+
+logger.init_if_uninitialized()
+
+_lg = logging.getLogger(__name__)
+
+this = sys.modules[__name__]
+
+this.program = None
+this.editor = None
+this.pipeline = None
+
+
+def get_m2u_base_path():
+    """ Get the path to the m2u folder (the folder this file is in)
     """
     fpath = os.path.abspath(__file__)
     fdir = os.path.dirname(fpath)
     return fdir
 
 
-_program = None
-_editor = None
-_pipeline = None
-
-def getProgram():
-    """get the program module"""
-    return _program
-
-def getEditor():
-    """get the editor module"""
-    return _editor
-
-def getPipeline():
-    """get the pipeline module"""
-    return _pipeline
-
-def initialize(programName,editorName):
+def initialize(program_name, editor_name):
     """Initializes the whole m2u system.
-    
-    :param programName: the program to use ('max' or 'maya' etc.)
-    :param editorName: the target engine to use ('ue4', 'unity' etc.)
-    
+
+    :param program_name: the program to use ('max' or 'maya' etc.)
+    :param editor_name: the target engine to use ('ue4', 'unity' etc.)
+
     """
-    if len(programName) == 0:
+    if not program_name:
         _lg.error("No program module specified for initialization. "
-                  "Make sure to pass the program name to your initialize call.")
+                  "Make sure to pass the program name to your initialize call."
+                  )
         return
-    if len(editorName) == 0:
+    if not editor_name:
         _lg.error("No editor module specified for initialization. "
                   "Make sure to pass the editor name to your initialize call.")
         return
-    _initProgram(programName)
-    _initEditor(editorName)
-    _initPipeline()
+    _init_program(program_name)
+    _init_editor(editor_name)
+    _init_pipeline()
 
-def _initProgram(programName):
+
+def _init_program(program_name):
     """Load the correct module as program."""
-    global _program
     try:
-        #_program = __import__("m2u."+programName)
-        _program = __import__('m2u.'+programName, globals(), locals(),
-                              ["__name__"], -1)
-        _lg.info( "Program module is `"+_program.__name__+"`")
+        this.program = __import__('m2u.' + program_name, globals(), locals(),
+                                  ["__name__"], -1)
+        _lg.info("Program module is `{0}`".format(this.program.__name__))
     except ImportError:
-        _lg.error("Unable to import program module %s" % (programName,))
+        _lg.error("Unable to import program module {0}".format(program_name))
+        raise
 
-def _initEditor(editorName):
-    """load the module for the editor"""
-    global _editor
+
+def _init_editor(editor_name):
+    """Load the module for the editor."""
     try:
-        _editor = __import__('m2u.'+editorName, globals(), locals(),
-                              ["__name__"], -1)
-        _lg.info( "Editor module is `"+_editor.__name__+"`")
+        this.editor = __import__('m2u.' + editor_name, globals(), locals(),
+                                 ["__name__"], -1)
+        _lg.info("Editor module is `{0}`".format(this.editor.__name__))
     except ImportError:
-        _lg.error("Unable to import editor module %s" % (editorName,))
+        _lg.error("Unable to import editor module {0}".format(editor_name))
+        raise
 
 
-def _initPipeline():
-    """load and use the pipeline module that is set in the settings file.
+def _init_pipeline():
+    """Load and use the pipeline module that is set in the settings file.
     If not set, use the m2u-minimal-pipeline instead.
-
     """
-    global _pipeline
-    name = "m2u.pipeline" # the fallback mini pipe
-    
+    name = "m2u.pipeline"  # The fallback mini-pipeline module
+
     if settings.config.has_option("General", "PipelineModule"):
         name = settings.config.get("General", "PipelineModule")
-    
+
     try:
-        _pipeline = __import__(name, globals(), locals(),
-                             ["__name__"], -1)
-        _lg.info( "Pipeline module is `"+_pipeline.__name__+"`")
+        this.pipeline = __import__(name, globals(), locals(),
+                                   ["__name__"], -1)
+        _lg.info("Pipeline module is `{0}`".format(this.pipeline.__name__))
     except ImportError:
-        _lg.error("Unable to import pipeline module %s" % (name,))
+        _lg.error("Unable to import pipeline module {0}".format(name))
+        raise
