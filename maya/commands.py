@@ -1,21 +1,25 @@
-# maya commands, will maybe divided into several files, we will see
+""" Commands for operating in maya.
 
-#print "maya command importing"
+"""
 
-import time
+# TODO: clean this up. Most content can probably be removed or
+#   moved to other files.
+
 import os
+import logging
 
 import pymel.core as pm
 import pymel.api as mapi
 
-import m2u
-import m2u.helper as helper
-#from m2u.maya import mayaObjectTracker
-from m2u.helper.ObjectInfo import ObjectInfo
+__all__ = [
+    'import_file',
+    ]
 
+# import m2u
+# import m2u.helper as helper
+# from m2u.helper.objects import ObjectInfo
 
-from m2u import logger as _logger
-_lg = _logger.getLogger(__name__)
+_lg = logging.getLogger(__name__)
 
 RADIAN_TO_DEGR = 57.2957795
 DEGR_TO_RADIAN = 0.0174532925
@@ -46,9 +50,9 @@ def translationMayaToUDK(t):
 # can be generalized (the importing itself, while still disabling m2u-syncing)
 # on the other hand, if somebody provides his own pipeline for m2u, they
 # should be able to do this from within those functions too.
-def importFile(path):
+def import_file(path):
     """ simply imports an FBX-file
-    
+
     """
     prog = m2u.core.getProgram()
     # disable object tracking, because importing FBX files will cause
@@ -62,10 +66,6 @@ def importFile(path):
     prog.setObjectSyncing(wasSyncing) # restore syncing state
 
 
-#def importAsset()
-#def referenceAsset ??
-
-
 # TODO: remove this function or move to UDK specific file
 # it is UDK specific, ue4 uses another function.
 # fetching is an editor-task, where the editor tells the program
@@ -73,7 +73,7 @@ def importFile(path):
 def fetchSelectedObjectsFromEditor():
     """ tell UDK to export the selected objects into a temporary FBX file
     and then maya will import that file.
-    
+
     """
     ed = m2u.core.getEditor()
     prog = m2u.core.getProgram()
@@ -102,7 +102,7 @@ def fetchSelectedObjectsFromEditor():
 # TODO: move to maya-specific pipeline file
 def exportObjectAsAsset(name, path):
     """ export object `name` to FBX file specified by `path`
-    
+
     :param name: objects name (name of the tranfsorm node)
     :param path: file path with extension, RELATIVE to the content root
 
@@ -123,7 +123,7 @@ identity = [1.0, 0.0, 0.0, 0.0,
 # TODO: move to maya-specific pipeline-file
 def exportObjectCentered(name, path, center=True):
     """ export object `name` to FBX file specified by `path`
-    
+
     :param name: objects name
     :param path: ABSOLUTE file path for the fbx file
     :param center: object transformation will be reset before export
@@ -178,7 +178,7 @@ def sendSelectedToEdOverwrite():
 
     If there are objects with the same "AssetPath" but different
     geometry, the user will be asked about them.
-    
+
     If there are objects without an "AssetPath" the user will
     be asked about them.
 
@@ -187,7 +187,7 @@ def sendSelectedToEdOverwrite():
 
     we should replace all geometry in maya of objects with the same
     asset path with the geometry of the new object after the export
-    
+
     """
     pass
 
@@ -196,19 +196,19 @@ def sendSelectedToEdAddMissingOnly():
     """ send selected by telling the editor to add assets with
     "AssetPath" to the level. Do as little exporting and importing
     as possible.
-    
+
     If one of the objects is not known by the editor, the editor
     will import the file.
-    
+
     If for one of the objects a file does not exist, it will be
     exported from maya.
-    
+
     If one of the objects has no "AssetPath", the user will be asked
     about those objects.
-    
+
     If there are objects that have the same "AssetPath" but differ by
     Geometry, the user will be asked about those objects.
-    
+
     """
     pass
 
@@ -262,7 +262,7 @@ def sendSelectedToEdExportOnly(selectedMeshes):
     actual pipeline-implementation, since all functions that deal with
     file paths will be delegated to a pipeline module, and that may be replaced
     by the user.
-    
+
     1. get selected objects
     2. for each object, get the "AssetPath" attribute
     3. if the object has no such attribute, save it in a untagged list
@@ -299,9 +299,9 @@ def sendSelectedToEdExportOnly(selectedMeshes):
     only counting objects... vertex count may be different in scenes, and the heavier
     the vert count, again the heavier the check will be...
     """
-    
+
     #selectedMeshes = getSelectedMeshes()
-    
+
     #2. for each object get the "AssetPath" attribute
     untaggedList = list()
     taggedDict = {}
@@ -319,7 +319,7 @@ def sendSelectedToEdExportOnly(selectedMeshes):
             untaggedList.append(obj)
     _lg.debug("found %i untagged" % len(untaggedList))
     _lg.debug("found %i tagged" % len(taggedDict))
-    
+
     #3. do the geometry check for tagged objects
     #   this assembles the taggedUniqueDict
     taggedDiscrepancyDetected = False
@@ -340,7 +340,7 @@ def sendSelectedToEdExportOnly(selectedMeshes):
                     taggedDiscrepancyDetected = True
             lis.remove(obj) # we are done with this object too
     _lg.debug("found %i tagged uniques" % len(taggedUniqueDict))
-    
+
     #3. do the geometry check for untagged objects
     untaggedUniquesDetected = False
     while len(untaggedList)>0:
@@ -361,7 +361,7 @@ def sendSelectedToEdExportOnly(selectedMeshes):
                 foundUniqueForMe = True
                 _lg.debug("found a unique key (%s) for %s" %(other.name(), obj.name()))
                 break
-                
+
         if not foundUniqueForMe:
             untaggedUniquesDetected = True
             # make this a new unique, simply take the objects name as AssetPath
@@ -373,7 +373,7 @@ def sendSelectedToEdExportOnly(selectedMeshes):
             # we will automatically compare to all other untagged to find
             # members for our new unique in the next loop iteration
     _lg.debug("found %i uniques (with untagged)" % len(taggedUniqueDict))
-    
+
     # TODO: 4. UI-stuff...
     #4. if taggedDiscrepancy or untaggedUniques were detected,
     # list all uniques in the UI and let the user change names
@@ -382,11 +382,11 @@ def sendSelectedToEdExportOnly(selectedMeshes):
         #for unique in taggedUniqueDict.keys():
             # it is up to the UI to do that and let the user
             # set a new assetPath on any of those unique guy's lists
-    
+
     #5. export files stuff
     for obj in taggedUniqueDict.keys():
         exportObjectAsAsset(obj.name(), obj.attr("AssetPath").get())
-        
+
     #6. tell the editor to import all the uniques
     fileList = []
     for obj in taggedUniqueDict.keys():
