@@ -27,12 +27,12 @@ from m2u.pipeline.filesystem import (
 
 
 def make_sure_path_exists(path):
+    # TODO: move to filesystem
     if not os.path.exists(path):
         try:
             os.makedirs(path)
         except OSError:
-            if not os.path.isdir(path):
-                raise
+            raise
 
 
 def get_fbx_settings_file_path():

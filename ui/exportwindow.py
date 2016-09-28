@@ -184,35 +184,32 @@ class ExportWindow(ui.window_base_class):
         self.operation = operation
         self.assetTree.clear()
         self.assetItemList = []
-        (assetList,
-         untaggedUniquesDetected,
-         taggedDiscrepancyDetected) = operation.get_export_data()
-        self.discrepancyLbl.setVisible(taggedDiscrepancyDetected)
-        self.untaggedLbl.setVisible(untaggedUniquesDetected)
+        self.discrepancyLbl.setVisible(operation.tagged_discrepancy_detected)
+        self.untaggedLbl.setVisible(operation.untagged_uniques_detected)
 
-        for entry in assetList:
+        for entry in operation.asset_list:
             lpath, fext = os.path.splitext(entry.asset_path)
             fpath, fname = os.path.split(lpath)
             if len(fpath) == 0:
                 # If there is no subpath, let us display at least a slash.
                 fpath = "/"
-            assetItem = QtGui.QTreeWidgetItem(self.assetTree)
-            assetItem.setText(0, fname)
-            assetItem.setText(1, fpath)
-            assetItem.setFlags(QtCore.Qt.ItemIsEnabled |
-                               QtCore.Qt.ItemIsEditable |
-                               QtCore.Qt.ItemIsSelectable)
+            asset_item = QtGui.QTreeWidgetItem(self.assetTree)
+            asset_item.setText(0, fname)
+            asset_item.setText(1, fpath)
+            asset_item.setFlags(QtCore.Qt.ItemIsEnabled |
+                                QtCore.Qt.ItemIsEditable |
+                                QtCore.Qt.ItemIsSelectable)
 
-            self.assetItemList.append(assetItem)
-            for objTuple in entry.obj_list:
-                objName = objTuple[0]
-                objItem = QtGui.QTreeWidgetItem(assetItem)
-                objItem.setText(0, objName)
-                objItem.setFont(0, self.italicFont)
-                # objItem.setDisabled(True)
-                objItem.setForeground(0, self.instanceBrush)
-                objItem.setIcon(0, icons.icoTransform)
-                objItem.objTuple = objTuple
+            self.assetItemList.append(asset_item)
+            for obj_name, obj_ref in entry.obj_list:
+                obj_item = QtGui.QTreeWidgetItem(asset_item)
+                obj_item.setText(0, obj_name)
+                obj_item.setFont(0, self.italicFont)
+                # obj_item.setDisabled(True)
+                obj_item.setForeground(0, self.instanceBrush)
+                obj_item.setIcon(0, icons.icoTransform)
+                obj_item.obj_name = obj_name
+                obj_item.obj_ref = obj_ref
 
         self.show()
         self.raise_()
@@ -232,7 +229,7 @@ class ExportWindow(ui.window_base_class):
             entry = AssetListEntry(path)
             for i in range(0, item.childCount()):
                 child = item.child(i)
-                entry.append(child.objTuple)
+                entry.append(child.obj_name, child.obj_ref)
             assetList.append(entry)
         return assetList
 
@@ -257,7 +254,7 @@ class ExportWindow(ui.window_base_class):
             entry = AssetListEntry(path)
             for i in range(0, item.childCount()):
                 child = item.child(i)
-                entry.append(child.objTuple)
+                entry.append(child.obj_name, child.obj_ref)
             assetList.append(entry)
         self.operation.set_edited_data(assetList)
         self.operation.do_export()

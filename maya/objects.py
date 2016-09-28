@@ -44,6 +44,75 @@ this._on_object_deleted_cb_id = None
 this._on_parent_changed_cb_id = None
 
 
+RADIAN_TO_DEGR = 57.2957795
+DEGR_TO_RADIAN = 0.0174532925
+
+
+#########################
+# convenience functions #
+#########################
+
+def get_transformation_from_obj(obj):
+    # TODO: clean up and generalize this function.
+    # TODO: we maybe should start piping a 'transformed' transformation
+    #   matrix between functions / programs, instead of 3 tuples of 3 floats.
+    """ Get three float tuples for translate, rotate and scale of the
+    object.
+
+    Args:
+        obj (Node): A maya pymel node instance.
+
+    Returns:
+        ((f,f,f),(f,f,f),(f,f,f)): Tuple with translation, rotation,
+            and scale float tuples.
+    """
+
+    # TODO: This function should automatically consider the correct
+    #   swizzling and rotation order conversion for the axis-up-space that
+    #   is set in maya or the UI.
+
+    # TODO: Currently conversion from maya to UDK/UE4 space is hard coded
+    #   here. This will not work for Unity and the like. This functionality
+    #   has to be reworked.
+
+
+    # If the engine supports nested transforms, world-space transforms
+    # will mess up the result.
+    use_world_space = not m2u.core.editor.supports_parenting()
+
+    # The translate values in the matrix will always reflect the TRUE
+    # translation while parenting and pivots mess up the the other results
+    mat = pm.xform(obj, query=True, m=True, ws=use_world_space)
+    #tx,ty,tz = pm.xform(obj,query=True, ws=useWorldSpace, t=True)
+    tx, ty, tz = (mat[12],mat[13],mat[14])
+    #tx,ty,tz = translationMayaToUDK(t)
+    #tx,ty,tz = (-tz,tx,ty) # y-up
+    #tx,ty,tz = (ty,tx,tz) # z-up
+    tx, ty, tz = (tx, -ty, tz)  # z-up as fbx from udk
+
+    rx, ry, rz = pm.xform(obj, query=True, ws=use_world_space, ro=True)
+    #rx,ry,rz = rotationMayaToUDK(r) #script job namespace problem
+
+    # maya y-up
+    # udk has a different rotation order (ZXY), so we transform the stuff here
+    # mrot = mapi.MEulerRotation(rx*DEGR_TO_RADIAN,ry*DEGR_TO_RADIAN,rz*DEGR_TO_RADIAN)
+    # newrot = mrot.reorder(mapi.MEulerRotation.kZXY)
+    # rx,ry,rz = (newrot.x,newrot.y,newrot.z)
+    # rx,ry,rz = (rx*RADIAN_TO_DEGR, ry*RADIAN_TO_DEGR, rz*RADIAN_TO_DEGR)
+    # rx,ry,rz = (rx,-ry,-rz)
+
+    # maya z-up
+    #rx,ry,rz = (rx,-rz,ry) # z-up (same as max)
+    rx, ry, rz = (-ry, -rz, rx)  # z-up as fbx from udk
+
+    sx, sy, sz = pm.xform(obj, query=True, r=True, s=True)
+    #sx,sy,sz = (sz,sx,sy) # y-up
+    #sx,sy,sz = (sy,sx,sz) # z-up (as max)
+    sx, sy, sz = (sx, sy, sz)  # z-up as fbx from udk
+
+    return ((tx, ty, tz), (rx, ry, rz), (sx, sy, sz))
+
+
 ############################
 # tracking setup functions #
 ############################
@@ -135,8 +204,7 @@ def _delete_object_tracker():
 # These functions always delete old trackers before creating the new
 # ones, just to make sure there aren't suddenly two callbacks doing the
 # same. The alternative would be to check if the callbacks are None, but
-# we assume that we really want to create NEW callbacks for some reason,
-# when calling these funcs.
+# we assume that we always want to create NEW callbacks for simplicity.
 
 
 def _create_selection_tracker():
@@ -148,7 +216,6 @@ def _create_selection_tracker():
     # during tracking-disabling operations like duplication and name-
     # changing.
     _create_object_script_jobs_no_sel_changed()
-
 
 
 def _create_duplicate_tracker():
@@ -218,71 +285,9 @@ def _delete_relationship_tracker():
         this._on_parent_changed_cb_id = None
 
 
-
-#########################
-# convenience functions #
-#########################
-
-def get_transformation_from_obj(obj):
-    # TODO: clean up and generalize this function.
-    """ Get three float tuples for translate, rotate and scale of the
-    object.
-
-    :param obj: the name of the object
-    :return: three float tuples for t, r and s
-    """
-
-    # TODO: This function should automatically consider the correct
-    #   swizzling and rotation order conversion for the axis-up-space that
-    #   is set in maya or the UI.
-
-    # TODO: Currently conversion from maya to UDK/UE4 space is hard coded
-    #   here. This will not work for Unity and the like. This functionality
-    #   has to be reworked.
-
-
-    # If the engine supports nested transforms, world-space transforms
-    # will mess up the result.
-    use_world_space = not m2u.core.editor.supports_parenting()
-
-    # the translate values in the matrix will always reflect the TRUE translation
-    # while parenting and pivots mess up the the other results
-    mat = pm.xform(obj, query=True, m = True, ws = use_world_space )
-    #tx,ty,tz = pm.xform(obj,query=True, ws=useWorldSpace, t=True)
-    tx, ty, tz = (mat[12],mat[13],mat[14])
-    #tx,ty,tz = translationMayaToUDK(t)
-    #tx,ty,tz = (-tz,tx,ty) # y-up
-    #tx,ty,tz = (ty,tx,tz) # z-up
-    tx,ty,tz = (tx,-ty,tz) # z-up as fbx from udk
-
-    rx,ry,rz = pm.xform(obj,query=True, ws=use_world_space, ro=True)
-    #rx,ry,rz = rotationMayaToUDK(r) #script job namespace problem
-    #global RADIAN_TO_DEGR
-    #global DEGR_TO_RADIAN
-
-    # maya y-up
-    # mrot = mapi.MEulerRotation(rx*DEGR_TO_RADIAN,ry*DEGR_TO_RADIAN,rz*DEGR_TO_RADIAN)
-    # newrot = mrot.reorder(mapi.MEulerRotation.kZXY)
-    # rx,ry,rz = (newrot.x,newrot.y,newrot.z)
-    # rx,ry,rz = (rx*RADIAN_TO_DEGR, ry*RADIAN_TO_DEGR, rz*RADIAN_TO_DEGR)
-    # rx,ry,rz = (rx,-ry,-rz)
-
-    # maya z-up
-    #rx,ry,rz = (rx,-rz,ry) # z-up (same as max)
-    rx,ry,rz = (-ry,-rz,rx) # z-up as fbx from udk
-
-    sx,sy,sz = pm.xform(obj,query=True, r=True, s=True)
-    #sx,sy,sz = (sz,sx,sy) # y-up
-    #sx,sy,sz = (sy,sx,sz) # z-up (as max)
-    sx,sy,sz = (sx,sy,sz) # z-up as fbx from udk
-
-    return ((tx,ty,tz), (rx,ry,rz), (sx,sy,sz))
-
-
 ###########################
 # transformation tracking #
 ###########################
-
 
 def _on_selection_changed_cb(data):
     """ Creates the object tracking script jobs and tells the editor to
@@ -306,8 +311,8 @@ def _create_object_script_jobs_no_sel_changed():
     # synced because they are relative to the parent in the editor anyway.
 
     # We need to filter out objects that are selected and have parents
-    # selected since we will sync all children of selected objects, those
-    # objects would be double-synced otherwise.
+    # selected since we will sync all children of selected objects.
+    # Those objects would be double-synced otherwise.
     # Note: It may be faster to double-sync some objects than to check
     #   long lists of child objects...
     selection = pm.selected()
@@ -354,7 +359,6 @@ def _delete_object_sjs():
 ########################
 # duplication tracking #
 ########################
-
 
 this._before_dup_selection = None
 this._before_dup_sync_state = None

@@ -161,12 +161,8 @@ class MainWindow(ui.window_base_class):
         self._doExport(op)
 
     def _doExport(self, op):
-        (assetList,
-         untaggedUniquesDetected,
-         taggedDiscrepancyDetected) = op.get_export_data()
-
-        needsExportWindow = (untaggedUniquesDetected or
-                             taggedDiscrepancyDetected or
+        needsExportWindow = (op.untagged_uniques_detected or
+                             op.tagged_discrepancy_detected or
                              self.exportSettingsWgt.alwaysShowExportWinChkbx.isChecked())  # noqa
         if needsExportWindow:
             self.exportWindow.setExportOperationAndShow(op)
@@ -176,6 +172,6 @@ class MainWindow(ui.window_base_class):
 
     def exportSelBtnClicked(self):
         # TODO: do_overwrite or not?
-        op = core.programExportOperation(do_overwrite=True, do_import=True,
-                                         do_assemble=False)
+        op = core.program.ExportOperation(do_overwrite=True, do_import=True,
+                                          do_assemble=False)
         self._doExport(op)
