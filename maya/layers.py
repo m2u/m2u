@@ -121,6 +121,7 @@ def _create_all_layer_script_jobs():
     """
     _delete_layer_script_jobs()
     for layer in pm.ls(type="displayLayer")[1:]:
+        # The first layer is the default layer, we ignore it.
         _create_layer_script_job(layer)
 
 
@@ -129,18 +130,16 @@ def _create_layer_script_job(layer):
         return
     layer_name = layer.name()
     sj_call = __name__ + '.on_layer_changed_sj("{0}")'.format(layer_name)
-    sj_id = pm.scriptJob(attributeChange=[name+'.visibility', sj_call])
+    sj_id = pm.scriptJob(attributeChange=[layer_name + '.visibility', sj_call])
     this._layer_script_jobs.append(sj_id)
 
 
-def on_layer_changed_sj(obj):
-    # if not pm.general.objExists(obj)
-    #     return
-    vis = pm.getAttr(obj+".visibility")
+def on_layer_changed_sj(layer_name):
+    vis = pm.getAttr(layer_name + ".visibility")
     if vis:
-        m2u.core.editor.unhide_layer(obj)
+        m2u.core.editor.unhide_layer(layer_name)
     else:
-        m2u.core.editor.hide_layer(obj)
+        m2u.core.editor.hide_layer(layer_name)
 
 
 def _delete_layer_script_jobs():
@@ -164,15 +163,17 @@ def _on_name_changed_cb(node, prev_name, data):
     """ Called whenever a displayLayer-node's name was changed.
     Display layer names are currently not checked for validity or
     uniqueness.
+
+    Name change on a display layer will go hand in hand with all
+    attributes being "changed". That means our visibility script job
+    will fire - with a name that doesn't exist anymore, resulting in
+    an AttributeError.
+
+    To prevent that, disable the script jobs when a name change is
+    detected and enable it at the end of this function, no matter what
+    happened, thus the while loop with breaks instead of using plain
+    return statements.
     """
-    # Name change on a display layer will go hand in hand with all
-    # attributes being "changed". That means our visibility script job
-    # will fire - with a name that doesn't exist anymore, resulting in
-    # an AttributeError.
-    # To prevent that, disable the script jobs when a name change is
-    # detected and enable it at the end of this function, no matter what
-    # happened, thus the while loop with breaks instead of using plain
-    # return statements.
     _delete_layer_script_jobs()
 
     while True:
@@ -214,34 +215,35 @@ def _on_create_display_layer(cmd):
     conjunction with adding objects to that new layer.
 
     The cmd will look something like this (all selected objects added):
+
         createDisplayLayer "-name" "layer1" "-number" 1 "-nr";
 
     Or so (no objects added):
+
         createDisplayLayer "-name" "layer1" "-number" 1 "-empty";
 
+    Problem is: This command will always have the name "layer1" which
+    can't be created if a layer named "layer1" already exists.
+    The layer "layer1" probably doesn't even exist in maya anymore,
+    because maya's renaming of the layer takes place BEFORE this
+    command is recognized.
+    So even if a "layer1" exists, it might not be the one just created.
+
+    We know that a new layer has been created and that the selected
+    objects are now its members. So we can ask one of the selected
+    objects about its current layer, which will be the new layer.
+
+    This of course only works when the selected objects were added to
+    the layer. Otherwise this would be an empty layer, which we can
+    ignore.
     """
-    # Problem is: This command will always have the name "layer1" which
-    # can't be created if a layer named "layer1" already exists.
-    # The layer "layer1" probably doesn't even exist in maya anymore,
-    # because mayas renaming of the layer takes place BEFORE this
-    # command is recognized.
-    # So even if a "layer1" exists, it might not be the one just created.
-
-    # We know that a new layer has been created and that the selected
-    # objects are now its members. So we can ask one of the selected
-    # objects about its current layer, that will be the new layer.
-
-    # This of course only works when the selected objects were added to
-    # the layer. Otherwise this would be an empty layer, which we can
-    # ignore.
-
     while True:
         if "-empty" in cmd:
             # Yeah, not interested in empty layers.
             break
 
         sel = pm.selected()
-        if len(sel)<1:
+        if len(sel) < 1:
             # There was no selection, so it was an empty layer too.
             break
 
@@ -262,16 +264,20 @@ def _on_edit_display_layer_members(cmd):
     """ Called when objects were added or removed from a display layer.
 
     The cmd will look something like this:
+
         editDisplayLayerMembers "-noRecurse" "layer2" {"pCube1"};
+
     If the layer's name is "defaultLayer" the objects were removed from
     any real named layer.
+
+    Note: The `-noRecurse` `-nr` parameter is not checked, because it
+      is always present in default maya behaviour and since the list
+      of objects is passed, it probably isn't necessary.
     """
-    # NOTE: The `-noRecurse` `-nr` parameter is not checked, because it
-    #   is always present in default maya behaviour and since the list
-    #   of objects is passed, it probably isn't necessary.
     if "-query" in cmd:
         # Query happens when the user right-clicks on a layer etc.
         return
+
     # Find the no-parameter quoted string, it will be the layer's name.
     # TODO: Can we make this clearer with a regexp?
     name_start = 0
@@ -281,6 +287,7 @@ def _on_edit_display_layer_members(cmd):
             break
     name_end = cmd.find('"', name_start)
     name = cmd[name_start: name_end]
+
     # Extract all object names from the text.
     list_start = cmd.find("{")
     list_end = cmd.find("}")
