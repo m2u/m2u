@@ -25,6 +25,7 @@ class ObjectInfo(object):
         self.position = pos
         self.rotation = rot
         self.scale = scale
+        self.asset_path = ''
         self.attrs = attrs
 
 

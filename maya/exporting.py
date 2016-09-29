@@ -268,13 +268,13 @@ class ExportOperation(object):
 
         for obj in selected_meshes:
             obj_transforms = m2u.maya.objects.get_transformation_from_obj(obj)
-            obj_info = ObjectInfo(name=obj.shortName(), typeInternal="mesh",
-                                  typeCommon="mesh")
+            obj_info = ObjectInfo(name=obj.shortName(), type_internal="mesh",
+                                  type_common="mesh")
             obj_info.pos = obj_transforms[0]
             obj_info.rot = obj_transforms[1]
             obj_info.scale = obj_transforms[2]
             path = obj.attr("AssetPath").get()
-            obj_info.AssetPath = path
+            obj_info.asset_path = path
             obj_info_list.append(obj_info)
 
         m2u.core.editor.add_actor_batch(obj_info_list)
