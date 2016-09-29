@@ -126,7 +126,7 @@ def set_object_syncing(sync):
 
 
 def is_object_syncing():
-    this._is_object_syncing
+    return this._is_object_syncing
 
 
 def get_object_syncing_state():
