@@ -267,7 +267,7 @@ def _delete_duplicate_tracker():
 def _delete_name_tracker():
     if this._on_name_changed_cb_id is not None:
         mapi.MMessage.removeCallback(this._on_name_changed_cb_id)
-        this.on_name_changed_cb_id = None
+        this._on_name_changed_cb_id = None
 
 
 def _delete_existence_tracker():
