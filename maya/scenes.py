@@ -1,9 +1,10 @@
-""" Sommands for scene events tracking in maya.
+"""Commands for scene events tracking in maya.
 
 Scene tracking observes if files are opened, closed or Maya exits.
 That may be important for deleting and recreating callbacks automatically.
 
-When Maya exits, we will try to disconnect from the Editor and save settings.
+When Maya exits, we will try to disconnect from the Editor and save
+settings.
 
 """
 
@@ -26,5 +27,5 @@ def _on_maya_exiting(data):
     m2u.core.settings.save_config()
 
 
-# Auto-create the ExitTracker when loading this module:
+# Register the exit-tracker when loading this module:
 create_maya_exit_tracker()

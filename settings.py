@@ -7,10 +7,10 @@ import ConfigParser
 
 config = ConfigParser.ConfigParser()
 thispath = os.path.dirname(os.path.realpath(__file__))
-config_file_path = os.path.join(thispath, 'settings.cfg')
+CONFIG_FILE_PATH = os.path.join(thispath, 'settings.cfg')
 
 try:
-    config.read(config_file_path)
+    config.read(CONFIG_FILE_PATH)
 except ConfigParser.Error:
     pass
 
@@ -50,7 +50,7 @@ def set_option(section, option, value):
 
 
 def save_config():
-    with open(config_file_path, 'wb') as configfile:
+    with open(CONFIG_FILE_PATH, 'wb') as configfile:
         config.write(configfile)
 
 

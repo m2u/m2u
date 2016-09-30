@@ -13,8 +13,8 @@ something concerning all display layers happens, this includes the user
 clicking in the displayLayer UI or so. Again it won't tell us WHICH or
 WHAT.
 
-There are a few Commands which we can intercept with the CommandCallback,
-namely "createDisplayLayer" and "editDisplayLayerMembers"
+There are a few Commands which we can intercept with the CommandCallback
+though, namely "createDisplayLayer" and "editDisplayLayerMembers"
 
 createDisplayLayer is dropped whenever a layer has been created. The
 parameters will contain the name of the layer and either nothing
@@ -64,7 +64,12 @@ this._on_command_executed_cb_id = None
 this._on_display_layer_deleted_cb_id = None
 this._on_name_changed_cb_id = None
 
+
 nullMObject = mapi.OpenMaya.MObject()
+"""Some callback functions expect a specific node to create a callback
+for. Passing a nullMObject makes some of those functions track all nodes
+instead.
+"""
 
 
 def set_layer_syncing(sync):

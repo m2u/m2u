@@ -5,9 +5,6 @@ restriction by UE4, which allows objects to be in multiple layers, but
 a restriction of how many other programs work with display layers
 (Maya, Unity).
 
-Since our main interest currently is Maya as the Program, we will not
-allow any other behaviour here.
-
 """
 
 import logging
@@ -43,6 +40,7 @@ def remove_objects_from_all_layers(obj_list):
 def rename_layer(old_name, new_name):
     msg = ("RenameLayer {0} {1}".format(old_name, new_name))
     return connection.send_message(msg)
+
 
 # def createLayer(layerName):
 #     msg = ("CreateLayer "+layerName)

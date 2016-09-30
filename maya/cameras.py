@@ -9,7 +9,7 @@ from m2u.maya import objects
 
 this = sys.modules[__name__]
 
-# Assigned to this, because we need the full path in the scriptjob
+# Module reference assigned to this, because script-jobs will access it.
 this.objects = objects
 
 this._is_camera_syncing = False

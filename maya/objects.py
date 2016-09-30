@@ -176,7 +176,7 @@ def set_object_syncing_state(**kwargs):
 
 nullMObject = mapi.OpenMaya.MObject()
 """Some callback functions expect a specific node to create a callback
-for passing a nullMObject makes some of those functions track all nodes
+for. Passing a nullMObject makes some of those functions track all nodes
 instead.
 """
 

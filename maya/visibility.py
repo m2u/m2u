@@ -59,6 +59,7 @@ def _on_hide(cmd):
     """ Executed when a 'hide' command was detected. """
     # hide all
     if "-all" in cmd:
+        # TODO: Why is this disabled?
         # m2u.core.editor.hide_all()
         return
 
@@ -99,14 +100,13 @@ def _on_hide(cmd):
         # The list (string) looks something like this:
         # {"pCube1","pCube2","pCube3","pCube4","pCube5","pCube6","pCube7"};
         list_end = cmd.find("}")
-        cnt = cmd[list_start + 2: list_end - 1]
-        names = cnt.split('","')
+        content = cmd[list_start + 2: list_end - 1]
+        names = content.split('","')
         m2u.core.editor.hide_by_names(names)
 
-    # If no list is provided, it should hide the selected only, but this
-    # seems to never be executed this way in maya.
     else:
-        # This most likely never happens in maya!
+        # If no list is provided, it should hide the selected only, but
+        # this seems to never be executed this way in maya.
         m2u.core.editor.hide_selected()
 
 
@@ -118,9 +118,8 @@ def _on_show_hidden(cmd):
 
     # show list of objects
     elif "{" in cmd:
-        print "SHOWING list of objects DETECTED, not implemented!!"
-        # TODO: maybe implement this showing of specific objects some day
-        pass
+        # TODO: Consider implementation of showing of specified objects.
+        _lg.warning("Not Implemented: SHOWING list of objects.")
 
     # show selected
     else:
@@ -128,7 +127,7 @@ def _on_show_hidden(cmd):
 
 
 def _on_isolate_select(cmd):
-    """ Executed when a 'isolateSelect' command was detected. """
+    """ Executed when an 'isolateSelect' command was detected. """
     # isolate selected
     if " 1 " in cmd:
         m2u.core.editor.isolate_selected()
@@ -137,5 +136,7 @@ def _on_isolate_select(cmd):
     elif " 0 " in cmd:
         # TODO: un-isolate is not really unhideAll, it is unhiding all
         #   objects that are not really "hidden" in maya, since isolation
-        #   is done via a viewport set. But we don't really care for now.
+        #   is done via a viewport set.
+        #   We need to get the list of objects from the viewport set or
+        #   so, if that is still available when this command is received.
         m2u.core.editor.unhide_all()

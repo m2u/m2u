@@ -67,7 +67,6 @@ def _receive_message():
         _lg.error("Not connected")
         return None
     data = this._socket.recv(BUFFER_SIZE)
-    # print "client received data:", data
     return data
 
 

@@ -122,7 +122,7 @@ def duplicate_object(name, dup_name, t=None, r=None, s=None):
     result_values = result.split()
     return_value = int(result_values[0])
     return_name = None
-    if len(result_values)>1:
+    if len(result_values) > 1:
         return_name = result_values[1]
 
     if return_value == 1:
