@@ -36,3 +36,11 @@ def get_project_export_dir():
         "General", "ProjectExportDir", default_export_folder,
         write_to_file=False)
     return path
+
+
+def make_sure_path_exists(path):
+    if not os.path.exists(path):
+        try:
+            os.makedirs(path)
+        except OSError:
+            raise
