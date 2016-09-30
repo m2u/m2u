@@ -1,6 +1,5 @@
 #ignore compiled python files
 *.pyc
-#ignore files that start with a dot
-.*
 
+#ignore settings-file that may get generated when running m2u
 settings.cfg
