@@ -2,7 +2,7 @@ m2u
 ===
 m2u is a collection of modular python scripts and plugins to allow for interactive syncing of "level building data" between 3D-Authoring-Applications (*Programs*) and Game-Engine-Applications (*Editors*).
 
-Currently only Maya and Unreal Engine 4 are supported. A Unity plugin is in the works and hopefully we will be able to add a 3DsMax implementation some day.
+Currently only Maya and Unreal Engine 4 are supported.
 
 To get an Idea of what m2u can do:
 - https://vimeo.com/101552170
@@ -11,46 +11,34 @@ To get an Idea of what m2u can do:
 
 You can also take a look at the [development thread in the UE4 forums](https://forums.unrealengine.com/showthread.php?22515-m2u-interactive-sync-script-for-Maya-gt-UE4).
 
-Using the script in Maya
+Using m2u in Maya
 ---
-1. Check out the **develop** branch. (The master branch will only be updated when we have a set of features working, mostly bug-free, but is currently very outdated.)
-2. Make sure that Maya can find it. This means the folder above the m2u folder has to be listed in the python path. You can do that by executing `sys.path.append("path/to/folder_above_m2u")` or by using the environment variable `PYTHONPATH`. In a managed environment (Pipeline) this is often overridden when starting Maya through a shell script or .bat file (if you don't know what you should do, ask your TD/TA about it).
-3. Start m2u by executing
-```python
-import m2u
-m2u.core.initialize("maya","ue4")
-m2u.core.getProgram().ui.createUI()
-```
-And then hit the connect button with the Editor running and listening.
+1. Clone or download the repository (hit the green button on the top-right of this page).
+    >Note: If you download the .zip, it will have the branch- or tag-name in the file-name like `m2u-develop`. After unzipping, make sure that the folder is only called `m2u`, or this won't work.
+2. Put the m2u folder into a place where Maya can find it. This means the folder **above** the m2u folder has to be listed in the [python sys-path](https://docs.python.org/2/library/sys.html#sys.path). 
 
-**NOTE:** You will have to use Z-up space in Maya currently.
+    There are multiple ways to achieve this:
+	
+    * You can add temporarily to the sys-path by [executing](http://help.autodesk.com/view/MAYAUL/2016/ENU//?guid=GUID-7C861047-C7E0-4780-ACB5-752CD22AB02E):
+      ```python
+      import sys
+      sys.path.append("path/to/folder_above_m2u")
+      ```
+    * Maya will by default look for scripts in a few directories, among others `<user’s directory>/My Documents/maya/scripts` and `<maya_directory>/scripts/others`. See the **PYTHONPATH** section on the [Knowledge Network](https://knowledge.autodesk.com/support/maya/learn-explore/caas/CloudHelp/cloudhelp/2015/ENU/Maya/files/Environment-Variables-File-path-variables-htm.html) for more info. If you put m2u in any of these directories, Maya should be able to find it.
+    * You can also modify (or create) the [PYTHONPATH environment variable](https://docs.python.org/2/using/cmdline.html#envvar-PYTHONPATH). Add an entry that points to the directory above the m2u directory, and every python on your system should be able to find m2u. 
+    >Note: In a managed environment (pipeline) this is often overridden when starting Maya through a shell script or .bat file. If you don't know what you should do, ask your pipeline-team / Technical Director about it.
+3. Start m2u by [executing](http://help.autodesk.com/view/MAYAUL/2016/ENU//?guid=GUID-7C861047-C7E0-4780-ACB5-752CD22AB02E):
+    ```python
+    import m2u
+    m2u.core.initialize("maya","ue4")
+    m2u.core.program.ui.create_ui()
+    ```
+4. Make sure the *Editor* is running and has the *m2uPlugin* loaded. Hit the connect button in the m2u window. If that went successfull, select what you want to be synced and have fun.
+   >You might want to click the *Setup Cameras* button to adapt Maya's cameras to large-scale scenes and 90˚ FOV.
+	
 
-Feature Status:
+>Note: You will currently have to use [**Z-up**](http://help.autodesk.com/view/MAYAUL/2016/ENU//?guid=GUID-4FDF34B0-D51B-48C2-8651-EC33127DD8E6) space in Maya.
+
+License
 ---
-working:
-- syncing the persp viewport camera
-- fast fetching selected objects from the Editor (uses ExportSelected to single FBX file)
-- syncing transforms of objects (now correct even with modified pivots)
-- duplicating of objects
-- hiding/showing of objects (due to the nature of how isolate select works in maya, this may not always be 100% correct)
-- deleting objects
-- renaming objects (unused and used names)
-- syncing display layers (a bit buggy sometimes)
-
-work in progress:
-- a modular pySide based UI (some of the pipeline-tasks depend on this)
-- allow and auto-detect Maya-Y-up space
-- getting 'known' meshes from the file system (importing the fbx file associated with a static mesh by checking the project structure on the file system. This allows to build levels in maya, and send the whole stuff to UE at once)
-- sending 'new' meshes from maya to UE (export to fbx, create asset, place in level. Thought further, this allows to quickly edit meshes and get the changes in the engine with one click)
-- getting 'unknown' meshes which are not on the file system but exist as static meshes in UE 
-- parenting and grouping of objects
-- support for other objects than meshes (namely lights)
-- making mass operations like selection and duplication faster (currently only one operation per tick)
-
-to be investigated some day (no idea when I will come to this):
-- transferring collision data (UCX prefixed meshes)
-- transferring dependent textures (automatically import/export)
-- sending skeletal mesh posing data (interactively get posing response in engine viewport when editing animations in maya)
-- syncing cameras on playback (for creating camera paths in maya and seeing an interactive preview in the editor)
-- two way interactive sync for simple stuff like selection (select something in UE will select the same in Maya)
-- ...
+MIT
