@@ -1,3 +1,26 @@
-""" UE4 module init file, imports the whole interface module, nothing else """
+"""
+The programs interface file, providing all the functionality external
+modules need to know.
 
-from m2u.ue4.ue4Interface import *
+The Interface provides the common functionality that the general UI and
+other Prorams needs to access. If you provide a custom UI in full or
+partially, you may access functionality in submodules instead and
+circumvent the interface.
+
+"""
+
+from .connection import *
+from .commands import *
+from .selection import *
+from .visibility import *
+from .layers import *
+from .assets import *
+from . import ui
+
+
+def get_name():
+    return "ue4"
+
+
+def supports_parenting():
+    return False

@@ -1,32 +1,31 @@
 """
-for loading and saving user settings
+Module for loading and saving user settings.
 """
 
 import os
 import ConfigParser
-import m2u
 
 config = ConfigParser.ConfigParser()
-m2upath = os.path.dirname(os.path.realpath(__file__))
+thispath = os.path.dirname(os.path.realpath(__file__))
+CONFIG_FILE_PATH = os.path.join(thispath, 'settings.cfg')
 
 try:
-    config.read(m2upath+'/settings.cfg')
+    config.read(CONFIG_FILE_PATH)
 except ConfigParser.Error:
     pass
 
-def isDebug():
+
+def is_debug():
     try:
-        return config.getboolean("General","Debug")
+        return config.getboolean("General", "Debug")
     except ConfigParser.Error:
-        #return m2u.isDebugMode()
         return True
 
 
-def getAndSetValueDefaultIfError(section, option, defaultstr, write=True):
-    """ try to get the value of `option` in `section`
-    if that fails, return the provided defaultstr and
-    at the same time set the provided defaultstr to be saved
-    out in a future save of the config file, if write is True.
+def get_or_default(section, option, default, write_to_file=True):
+    """ Try to get the value of `option` in `section`.
+    If the setting can not be found, use `default` to set its
+    value. If `write` is True, save this to the config file.
 
     This is to prevent having to write a thousand try-catch around
     everywhere you want to parse a value from the config.
@@ -34,22 +33,26 @@ def getAndSetValueDefaultIfError(section, option, defaultstr, write=True):
     try:
         return config.get(section, option)
     except ConfigParser.Error:
-        if write:
+        if write_to_file:
             if not config.has_section(section):
                 config.add_section(section)
-            config.set(section, option, defaultstr)
-        return defaultstr
+            config.set(section, option, str(default))
+        return str(default)
 
-def setOptionCreateSection(section, option, value):
-    """ set the option, if the section does not exist, create it automatically
+
+def set_option(section, option, value):
+    """ Set the option. If the section does not exist, create it
+    automatically.
     """
     if not config.has_section(section):
         config.add_section(section)
     config.set(section, option, value)
 
-def saveConfig():
-    with open(m2upath+'/settings.cfg', 'wb') as configfile:
+
+def save_config():
+    with open(CONFIG_FILE_PATH, 'wb') as configfile:
         config.write(configfile)
 
-def getConfigParser():
+
+def get_config_parser():
     return config

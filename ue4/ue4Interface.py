@@ -1,21 +1,17 @@
 """
-the programs interface file, providing all the functionality external modules
-need to know.
+The programs interface file, providing all the functionality external
+modules need to know.
 
-You might expect to find the content of this file directly in the __init__ file
-of the package instead. But __init__ is a stupid name and package layout might
-change. Instead __init__ will import everything from this file.
-
-The Interface may be split up into "from" and "to" separate files, but that
-depends on the ammount of stuff herein.
-
-The Interface provides the common functionality that the general UI and other
-Prorams needs to access. If you provide a custom UI in full or partially,
-you may access functionality in submodules instead and circumvent the Interface.
+The Interface provides the common functionality that the general UI and
+other Prorams needs to access. If you provide a custom UI in full or
+partially, you may access functionality in submodules instead and
+circumvent the interface.
 
 """
 
-from m2u.ue4 import ue4Conn as _u
+from .connection import (
+    connect, disconnect, send_message
+)
 from m2u.ue4 import ue4Command
 from m2u.ue4 import ue4Selection as _s #selection
 from m2u.ue4 import ue4Command as _a #editing
