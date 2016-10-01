@@ -27,8 +27,6 @@ class ExportOperation(object):
     calling the appropriate public functions of this object.
     """
 
-    auto_generated_name_suffix = "_AutoName"
-
     def __init__(self, do_overwrite=False, do_import=True, do_assemble=True):
         """Collect data for exporting, based on the selected objects in
         the scene.
@@ -185,9 +183,6 @@ class ExportOperation(object):
                 # convenience.
                 npath = obj.shortName()
                 npath = helper.remove_number_suffix(npath)
-                # TODO: check the 'auto_generated_name_suffix' is this
-                #   really necessary?
-                npath = npath + self.auto_generated_name_suffix  # + ".fbx"
                 obj.attr("AssetPath").set(npath)
                 tagged_unique_dict[obj] = []
                 untagged_list.remove(obj)
