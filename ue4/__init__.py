@@ -23,4 +23,9 @@ def get_name():
 
 
 def supports_parenting():
+    """Does this Engine support parenting of objects, aka nesting of
+    transforms or attaching objects.
+
+    This is important when sending transformation values.
+    """
     return False
