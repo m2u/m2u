@@ -383,13 +383,13 @@ def _on_after_duplicate_cb(data):
     """
     after_dup_sel = pm.selected()
     if len(after_dup_sel) != len(this._before_dup_selection):
-        _lg.error("Could not sync duplication, originals and results "
-                  "lists are of different lengths")
+        _lg.error("Could not sync duplication, originals and results lists "
+                  "are of different lengths.")
         return
 
+    dup_infos = []
     # reselect_names_list = list()
     for old, new in zip(this._before_dup_selection, after_dup_sel):
-        # TODO: check if (old) object exists in editor, if not return early
         t, r, s = get_transformation_from_obj(new)
         # Now get an unused name from the editor.
         # If the names mismatch, we need to rename the object in maya.
@@ -397,36 +397,48 @@ def _on_after_duplicate_cb(data):
         # so we need to do this until maya and the editor agree upon
         # a name.
         m_name = str(new)  # maya's Name
-        u_name = ""  # Engine's Name
+        ed_name = ""  # Engine's Name
         while True:
-            u_name = m2u.core.editor.get_free_name(m_name)
-            _lg.debug("Editor returned '{0}' as a free name.".format(u_name))
-            if u_name != m_name:
+            ed_name = m2u.core.editor.get_free_name(m_name)
+            _lg.debug("Editor returned '{0}' as a free name.".format(ed_name))
+            if ed_name != m_name:
                 _lg.debug("Name '{0}' already in use, Maya needs to find"
                           " a new one.".format(m_name))
-                m_name = str(pm.rename(m_name, u_name))
-            if u_name == m_name:  # not 'else', because m_name may have changed
+                m_name = str(pm.rename(m_name, ed_name))
+            if ed_name == m_name:  # not 'else', because m_name may have changed
                 break
-        code, ed_name = m2u.core.editor.duplicate_object(str(old), u_name,
-                                                         t, r, s)
-        # TODO: maybe check the return value of duplicateObject call
-        # since we changed the name, we need to select the renamed object or
-        # the user will get a MayaNodeError when trying to move the duplicates
-        # also subsequent duplicates may depend on a correct selection list
 
-        # reselect_names_list.append(mName)
+        dup_info = {'original': str(old),
+                    'name': ed_name,
+                    'translation': t,
+                    'rotation': r,
+                    'scale': s}
+        dup_infos.append(dup_info)
 
-        if code == 3:
+    results = m2u.core.editor.duplicate_objects(dup_infos)
+
+    for index, code, ed_name in enumerate(results):
+        m_name = dup_infos[index]['']
+        if code == "NotFound":
+            _lg.error("Duplication failed on {0}, original object could not "
+                      "be found.".format(m_name))
+        elif code == "Renamed":
             # This should not happen, because we used get_free_name beforehand.
             _lg.error("Renaming the duplicate failed, maya object '{0}' and "
-                      "engine object '{1}' are now desynced"
+                      "engine object '{1}' are now desynced."
                       .format(m_name, ed_name))
+        elif code == "Failed":
+            _lg.error("Duplication failed on {0}, unknown reason."
+                      .format(m_name))
 
-        # Selecting during duplication will kill the transform value for
-        # smart-duplicate. We would have to do a reselect after ALL
-        # duplicates, or do the renaming after all the duplication is
-        # done. But this could get complicated with duplicate callbacks.
+    # Selecting during duplication will kill the transform value for
+    # smart-duplicate. We would have to do a reselect after ALL
+    # duplicates, or do the renaming after all the duplication is
+    # done. But this could get complicated with duplicate callbacks.
 
+    # since we changed the name, we need to select the renamed object or
+    # the user will get a MayaNodeError when trying to move the duplicates
+    # also subsequent duplicates may depend on a correct selection list
     # pm.select(reselect_names_list, r=True)
     set_object_syncing_state(**this._before_dup_sync_state)
 
@@ -460,20 +472,20 @@ def _on_name_changed_cb(node, prev_name, data):
     # TODO: delegate the name-finding functionality to a common function for
     # this and the duplicate callback
     m_name = new_name # maya's Name
-    u_name = "" # Engine's Name
+    ed_name = "" # Engine's Name
 
     # Disable object syncing so internal renames won't trigger a new
     # rename callback.
     backup_sync_state = get_object_syncing_state()
     set_object_syncing_state(name=False)
     while True:
-        u_name = m2u.core.editor.get_free_name(m_name)
-        _lg.debug("Editor returned '{0}' as a free name.".format(u_name))
-        if u_name != m_name:
+        ed_name = m2u.core.editor.get_free_name(m_name)
+        _lg.debug("Editor returned '{0}' as a free name.".format(ed_name))
+        if ed_name != m_name:
             _lg.debug("Name '{0}' already in use, Maya needs to find"
                       " a new one.".format(m_name))
-            m_name = str(pm.rename(m_name, u_name))
-        if u_name == m_name:  # not 'else', because m_name may have changed
+            m_name = str(pm.rename(m_name, ed_name))
+        if ed_name == m_name:  # not 'else', because m_name may have changed
             break
     set_object_syncing_state(**backup_sync_state)
     code, ed_name = m2u.core.editor.rename_object(prev_name, m_name)

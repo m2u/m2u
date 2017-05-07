@@ -6,6 +6,7 @@ Commands will be issued by sending messages through the TCP port.
 
 import os
 import logging
+import json
 
 from m2u import core
 from m2u.helper.objects import ObjectInfo
@@ -82,55 +83,45 @@ def rename_object(name, new_name):
         return (False, result)
 
 
-# TODO: implement a batch duplicate function for UE and the appropriate
-#   caller in maya
-def duplicate_object(name, dup_name, t=None, r=None, s=None):
+def duplicate_objects(dup_infos):
     """Duplicate an object with optional transformations.
 
-    :param name: name of the object to modify
-    :param dup_name: desired name for the duplicate
-    :param t: translation float tuple or None if not to change
-    :param r: rotation float tuple or None if not to change
-    :param s: 3d scale float tuple or None if not to change
+    Args:
+        dup_infos (list[dict]): A list of duplication infos.
+            Each info is a dictionary, containing the following data:
+            original (str): Name of the object to duplicate.
+            name (str): Desired name for the duplicate.
+            translation (f,f,f): Translation float tuple or None if not
+                to change.
+            rotation (f,f,f): Rotation float tuple or None if not to
+                change.
+            scale (f,f,f): 3d scale float tuple or None if not to change.
 
-    :return: tuple (int,string) the int will be
-        - 0 if no problem occured
-        - 1 if the original object could not be found
-        - 2 if the name for the duplicate is already taken
-        - 3 if the name was changed by the editor
-        - 4 error, reason unknown
-    Return values 2 and 3 are mutually exclusive by implementation.
-    If 3 is returned, the string will be the name the Editor assigned
-    and None otherwise.
+    Returns:
+        list[tuple (str, str)]: The first element of each tuple
+            contains the return 'code' of the operation, which can be
+            - 'Ok' If no problem occured.
+            - 'NotFound' If the original could not be found.
+            - 'Renamed' If the name was changed by the editor.
+            - 'Failed' If something else problematic happened.
+           The second element is None, unless the editor 'Renamed' the
+           object, in which case it contains the editor-assigned name.
 
-    If the return value is 1 or 2, the calling function should change
-    the name(s) and try again.
-    If the return value is (3,string) the calling function must assign
-    the returned name to the original object in the Program or find a new
-    fitting name and assign it to the duplicated object using the
+    If the return value is 'Renamed', the calling function must assign
+    the returned name to the original object in the Program or find a
+    new fitting name and assign it to the duplicated object using the
     :func:`renameObject` function with the returned string as name.
 
     .. seealso:: :func:`renameObject` :func:`getFreeName`
 
     """
-    t = "" if t is None else ("T=(%f %f %f)" % (t[0], t[1], t[2]))
-    r = "" if r is None else ("R=(%f %f %f)" % (r[0], r[1], r[2]))
-    s = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
-    msg = ("DuplicateObject {name} {dup_name} {t} {r} {s}"
-           .format(**locals()))
-    result = connection.send_message(msg)
-    result_values = result.split()
-    return_value = int(result_values[0])
-    return_name = None
-    if len(result_values) > 1:
-        return_name = result_values[1]
+    infos_str = json.dumps(dup_infos)
+    msg = "DuplicateObjects " + infos_str
 
-    if return_value == 1:
-        _lg.error("Duplication failed, original object could not be found.")
-    elif return_value == 3:
-        _lg.warn("Editor returned a different name than desired "
-                 "('%s' instead of '%s')." % (return_name, dup_name))
-    return (return_value, return_name)
+    result = connection.send_message(msg)
+    results = json.parse(result)
+
+    return results
 
 
 def undo():
