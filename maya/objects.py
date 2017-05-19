@@ -135,11 +135,11 @@ def get_object_syncing_state():
     the func:`set_object_syncing_state()` function.
     """
     states = {
-        "selection": bool(this._on_selection_changed_cbid),
-        "duplicate": bool(this._on_before_duplicate_cbid),
-        "name": bool(this._on_name_changed_cbid),
-        "existence": bool(this._on_object_deleted_cbid),
-        "relationship": bool(this._on_parent_changed_cbid),
+        "selection": bool(this._on_selection_changed_cb_id),
+        "duplicate": bool(this._on_before_duplicate_cb_id),
+        "name": bool(this._on_name_changed_cb_id),
+        "existence": bool(this._on_object_deleted_cb_id),
+        "relationship": bool(this._on_parent_changed_cb_id),
     }
     return states
 
