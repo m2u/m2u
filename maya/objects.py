@@ -420,16 +420,15 @@ def _on_after_duplicate_cb(data):
     for index, code, ed_name in enumerate(results):
         m_name = dup_infos[index]['']
         if code == "NotFound":
-            _lg.error("Duplication failed on {0}, original object could not "
-                      "be found.".format(m_name))
+            _lg.error("Duplication failed on %s, original object could not "
+                      "be found.", m_name)
         elif code == "Renamed":
             # This should not happen, because we used get_free_name beforehand.
-            _lg.error("Renaming the duplicate failed, maya object '{0}' and "
-                      "engine object '{1}' are now desynced."
-                      .format(m_name, ed_name))
+            _lg.error("Renaming the duplicate failed, maya object '%s' and "
+                      "engine object '%s' are now desynced.",
+                      m_name, ed_name)
         elif code == "Failed":
-            _lg.error("Duplication failed on {0}, unknown reason."
-                      .format(m_name))
+            _lg.error("Duplication failed on %s, unknown reason.", m_name)
 
     # Selecting during duplication will kill the transform value for
     # smart-duplicate. We would have to do a reselect after ALL
@@ -498,8 +497,8 @@ def _on_name_changed_cb(node, prev_name, data):
             return
     # If we end up here, the editor returned a different name than we
     # desired this should not happen since we "getFreeName" beforehand
-    _lg.error("Renaming failed, maya object '{0}' and engine object '{1}' "
-              "are now desynced.".format(m_name, ed_name))
+    _lg.error("Renaming failed, maya object '%s' and engine object '%s' "
+              "are now desynced.", m_name, ed_name)
 
 
 ##################################

@@ -42,6 +42,6 @@ def wait_for_file_to_become_available(path, timeout_seconds=10):
             time.sleep(0.01)
             waited_time += 0.01
             if waited_time > timeout_seconds:
-                _lg.error("Waited for too long for file to become available: "
-                          "{0}".format(path))
+                _lg.error("Waited for too long for file to become available: %s",
+                          path)
                 return False

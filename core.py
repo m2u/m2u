@@ -59,7 +59,7 @@ def _init_program(program_name):
                                   ["__name__"], -1)
         _lg.info("Program module is `{0}`".format(this.program.__name__))
     except ImportError:
-        _lg.error("Unable to import program module {0}".format(program_name))
+        _lg.error("Unable to import program module %s", program_name)
         raise
 
 
@@ -70,7 +70,7 @@ def _init_editor(editor_name):
                                  ["__name__"], -1)
         _lg.info("Editor module is `{0}`".format(this.editor.__name__))
     except ImportError:
-        _lg.error("Unable to import editor module {0}".format(editor_name))
+        _lg.error("Unable to import editor module %s", editor_name)
         raise
 
 
@@ -88,5 +88,5 @@ def _init_pipeline():
                                    ["__name__"], -1)
         _lg.info("Pipeline module is `{0}`".format(this.pipeline.__name__))
     except ImportError:
-        _lg.error("Unable to import pipeline module {0}".format(name))
+        _lg.error("Unable to import pipeline module %s", name)
         raise

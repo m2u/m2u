@@ -72,14 +72,14 @@ def rename_object(name, new_name):
     msg = ("RenameObject %s %s" % (name, new_name))
     result = connection.send_message(msg)
     if result == "1":
-        _lg.error(("No object with name '%s' exists" % name))
+        _lg.error("No object with name '%s' exists", name)
         return (False, None)
     if result == new_name:
         return (True, None)
     else:
         # The object was (probably) renamed! but the editor changed the name...
         _lg.warn("Rename returned a different name than desired "
-                 "('%s' instead of '%s')." % (result, new_name))
+                 "('%s' instead of '%s').", result, new_name)
         return (False, result)
 
 
