@@ -1,0 +1,10 @@
+flake8>=3.3.0
+pep8>=1.7.0
+
+pytest>=3.0.7
+pytest-flake8>=0.8.0
+pytest-mock>=1.6.0
+jedi>=0.10.2
+epc>=0.0.5
+
+PySide==1.2.2
