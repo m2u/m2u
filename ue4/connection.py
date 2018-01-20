@@ -19,7 +19,8 @@ this = sys.modules[__name__]
 
 this._socket = None
 READ_BODY_TIMEOUT_S = 3.0
-SOCKET_TIMEOUT_S = 30.0
+SOCKET_CONNECT_TIMEOUT_S = 1.0
+SOCKET_RESPONSE_TIMEOUT_S = 120.0
 
 
 def connect(*args):
@@ -63,14 +64,15 @@ def _open_connection(tcp_ip='127.0.0.1', tcp_port=3939):
     disconnect()
 
     this._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    this._socket.settimeout(SOCKET_TIMEOUT_S)
+    this._socket.settimeout(SOCKET_CONNECT_TIMEOUT_S)
     this._socket.connect((tcp_ip, tcp_port))
 
 
-def send_message(message):
+def send_message(message, timeout=SOCKET_RESPONSE_TIMEOUT_S):
     if this._socket is None:
         _lg.error("Not connected.")
-        return
+        return None
+    this._socket.settimeout(timeout)
     content_length = len(message)
     # Convert to Big Endian int32 and send as header.
     this._socket.sendall(struct.pack('!I', content_length))
@@ -85,6 +87,10 @@ def _receive_message():
 
     # Get the content length header (4 bytes)
     content_length = this._socket.recv(4)
+    # TODO: The general socket timeout may actually timeout when it just
+    # takes a while for the server to respond (large messages?)
+    # needs some tests, like large-body response from the server,
+    # or time-delayed response from the server.
     if not content_length:
         _lg.error("Could not retrieve message header.")
         return None
