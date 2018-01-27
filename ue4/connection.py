@@ -23,6 +23,10 @@ SOCKET_CONNECT_TIMEOUT_S = 1.0
 SOCKET_RESPONSE_TIMEOUT_S = 120.0
 
 
+class ReadBodyTimeoutError(Exception):
+    """Timed out while waiting for body data of a message."""
+
+
 def connect(*args):
     """Connect to the specified address.
 
@@ -112,7 +116,7 @@ def _receive_message():
             if time_read_body_duration > READ_BODY_TIMEOUT_S:
                 _lg.error("Failed to retrieve full message. "
                           "Expected %i more bytes.", content_length)
-                return None
+                raise ReadBodyTimeoutError()
         else:
             message_buffer += chunk
             content_length -= len(chunk)

@@ -29,7 +29,7 @@ def transform_object(obj_name, t=None, r=None, s=None):
     s = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
     msg = ("TransformObject {name} {t} {r} {s}"
            .format(name=obj_name, t=t, r=r, s=s))
-    connection.send_message(msg)
+    return connection.send_message(msg)
 
 
 def transform_camera(x, y, z, rx, ry, rz, cam_identifier="All"):
@@ -48,12 +48,12 @@ def transform_camera(x, y, z, rx, ry, rz, cam_identifier="All"):
     #   specifying a specific viewport. Or a name for a camera.
     msg = ("TransformCamera {x} {y} {z} {rx} {ry} {rz} {cam_identifier}"
            .format(**locals()))
-    connection.send_message(msg)
+    return connection.send_message(msg)
 
 
 def delete_selected():
     msg = ("DeleteSelected")
-    connection.send_message(msg)
+    return connection.send_message(msg)
 
 
 def rename_object(name, new_name):
@@ -71,7 +71,7 @@ def rename_object(name, new_name):
     """
     msg = ("RenameObject %s %s" % (name, new_name))
     result = connection.send_message(msg)
-    if result == "1":
+    if result == "NotFound":
         _lg.error("No object with name '%s' exists", name)
         return (False, None)
     if result == new_name:
@@ -126,12 +126,12 @@ def duplicate_objects(dup_infos):
 
 def undo():
     msg = ("Undo")
-    connection.send_message(msg)
+    return connection.send_message(msg)
 
 
 def redo():
     msg = ("Redo")
-    connection.send_message(msg)
+    return connection.send_message(msg)
 
 
 def get_free_name(name, max_iters=5000):
@@ -154,7 +154,7 @@ def get_free_name(name, max_iters=5000):
 def delete_object(name):
     """ Try to delete the object, no return code."""
     msg = ("DeleteObject " + name)
-    connection.send_message(msg)
+    return connection.send_message(msg)
 
 
 def parent_child_to(child_name, parent_name):
@@ -170,7 +170,7 @@ def parent_child_to(child_name, parent_name):
     if (parent_name is not None) and (parent_name != ''):
         msg = msg + " " + parent_name
 
-    connection.send_message(msg)
+    return connection.send_message(msg)
 
 
 def add_actor_batch(asset_list):
@@ -182,7 +182,7 @@ def add_actor_batch(asset_list):
         line = object_info_to_string(obj_info)
         msg = msg + "\n" + line
     _lg.debug("Assembled add batch command: " + msg)
-    connection.send_message(msg)
+    return connection.send_message(msg)
 
 
 def object_info_to_string(obj_info):
