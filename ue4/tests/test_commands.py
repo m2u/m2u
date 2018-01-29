@@ -89,7 +89,10 @@ def test_object_info_to_string():
         'test_type_common',
         attrs={'test_key': 'test_value'},
     )
-    expected = '/Game test_name T=(0 0 0) R=(0 0 0) S=(1 1 1)'
+    expected = ('/Game test_name '
+                'T=(0.000000 0.000000 0.000000) '
+                'R=(0.000000 0.000000 0.000000) '
+                'S=(1.000000 1.000000 1.000000)')
     result = commands.object_info_to_string(obj_info)
     assert result == expected
 

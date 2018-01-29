@@ -190,13 +190,14 @@ def object_info_to_string(obj_info):
     our UE4-interpreter.
 
     """
-    t = obj_info.pos
-    r = obj_info.rot
+    t = obj_info.position
+    r = obj_info.rotation
     s = obj_info.scale
     t = "" if t is None else ("T=(%f %f %f)" % (t[0], t[1], t[2]))
     r = "" if r is None else ("R=(%f %f %f)" % (r[0], r[1], r[2]))
     s = "" if s is None else ("S=(%f %f %f)" % (s[0], s[1], s[2]))
-    asset_path = internal_asset_path_from_asset_file_path(obj_info.asset_path)
+    asset_path = obj_info.attrs.get('asset_path', '')
+    asset_path = internal_asset_path_from_asset_file_path(asset_path)
     text = asset_path + " " + obj_info.name + " " + t + " " + r + " " + s
     return text
 

@@ -8,7 +8,7 @@ class ObjectInfo(object):
     """
 
     def __init__(self, name, type_internal, type_common,
-                 pos=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1), attrs={}):
+                 position=(0, 0, 0), rotation=(0, 0, 0), scale=(1, 1, 1), attrs={}):
         """
         Arguments:
         - `name`: string, name of the object
@@ -22,8 +22,8 @@ class ObjectInfo(object):
         self.name = name
         self.type_common = type_common
         self.type_internal = type_internal
-        self.position = pos
-        self.rotation = rot
+        self.position = position
+        self.rotation = rotation
         self.scale = scale
         self.asset_path = ''
         self.attrs = attrs
