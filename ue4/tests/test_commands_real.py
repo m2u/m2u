@@ -12,6 +12,7 @@ implementation interpretes or returns values.
 import pytest
 
 from m2u.ue4 import commands
+from m2u.helper.objects import ObjectInfo
 
 
 @pytest.mark.ue4
@@ -63,9 +64,15 @@ def test_parent_child_to(with_test_scene):
     assert result == 'Ok'
 
 
-@pytest.mark.xfail
 @pytest.mark.ue4
-def test_add_actor_batch(mocker):
-    asset_list = [
+def test_add_actor_batch(with_test_scene):
+    obj_info_list = [
+        ObjectInfo(
+            'test_name',
+            'mesh',
+            'mesh',
+            attrs={'asset_path': '/Engine/BasicShapes/Cube'},
+        ),
     ]
-    raise NotImplementedError()
+    result = commands.add_actor_batch(obj_info_list)
+    assert result == 'Ok'

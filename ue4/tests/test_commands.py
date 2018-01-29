@@ -75,17 +75,33 @@ def test_parent_child_to(mocker):
     connection.send_message.assert_called_once_with("ParentChildTo child parent")
 
 
-@pytest.mark.xfail
 def test_add_actor_batch(mocker):
-    asset_list = [
+    obj_info_list = [
+        m2u.helper.objects.ObjectInfo(
+            name='obj_name',
+            type_internal='mesh',
+            type_common='mesh',
+            position=[1, 2, 3],
+            rotation=[4, 5, 6],
+            scale=[7, 8, 9],
+            attrs={'asset_path': 'some_path'}
+        ),
     ]
-    raise NotImplementedError()
+    mocker.patch.object(connection, 'send_message')
+    commands.add_actor_batch(obj_info_list)
+    expected = ('AddActorBatch\n'
+                '/Game/some_path '
+                'obj_name '
+                'T=(1.000000 2.000000 3.000000) '
+                'R=(4.000000 5.000000 6.000000) '
+                'S=(7.000000 8.000000 9.000000)')
+    connection.send_message.assert_called_once_with(expected)
 
 
 def test_object_info_to_string():
     obj_info = m2u.helper.objects.ObjectInfo(
         'test_name',
-        'tet_type_internal',
+        'test_type_internal',
         'test_type_common',
         attrs={'test_key': 'test_value'},
     )

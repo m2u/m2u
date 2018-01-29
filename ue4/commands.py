@@ -206,6 +206,7 @@ def internal_asset_path_from_asset_file_path(asset_file_path):
     path, ext = os.path.splitext(asset_file_path)
     if not path.startswith("/") and len(path) > 0:
         path = "/" + path
-    asset_path = "/Game" + path
-    asset_path.replace("//", "/")
-    return asset_path
+    if not path.startswith("/Game") and not path.startswith("/Engine"):
+        path = "/Game" + path
+    path.replace("//", "/")
+    return path
