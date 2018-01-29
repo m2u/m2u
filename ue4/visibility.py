@@ -41,5 +41,5 @@ def hide_by_names(names_list):
 
 def unhide_by_names(names_list):
     """Show all objects in the names_list."""
-    msg = "UnhideByName " + " ".join(names_list)
+    msg = "UnhideByNames " + " ".join(names_list)
     return connection.send_message(msg)
